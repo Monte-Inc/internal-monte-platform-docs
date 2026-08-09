@@ -14,8 +14,16 @@
 
 ## Terminology
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
+
+- **Measurement** — a frozen eval definition over one Environment. Capitalize. Never "benchmark" or "eval suite".
+- **Environment** — a pluggable graded task package. Never "dataset".
+- **Run** — one eval or train execution recorded in the Ledger.
+- **Lineage** — a chain of training runs building on one another.
+- **Ledger** — the append-only per-Measurement record. Never "database" or "history".
+- **Split** — a frozen task partition (train pool, dev, test).
+- **Baseline** — the base-model eval later runs are compared against.
+- The CLI is `monte` (code-formatted, lowercase).
 
 ## Style preferences
 
@@ -29,5 +37,6 @@
 
 ## Content boundaries
 
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}
+- Document the user-facing surfaces: CLI, environments, console, concepts.
+- Do not copy internal planning docs, research reports, or box operational details (hostnames, IPs, SSH specifics) into this site.
+- The platform repo's `docs/` folder is internal engineering material, not a source to republish verbatim.

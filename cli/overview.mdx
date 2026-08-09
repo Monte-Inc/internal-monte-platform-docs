@@ -1,0 +1,25 @@
+---
+title: "CLI overview"
+description: "The monte command surface at a glance"
+---
+
+## Command map
+
+- `monte init <measurement> --env <name>` — freeze a new Measurement
+- `monte eval <measurement>` — run eval@N
+- `monte train <measurement>` — run one train@N chunk (`--smoke`, `--chained`)
+- `monte status <measurement>` — ledger rows and per-lineage delta
+- `monte logs` / `monte show` / `monte stop <ref>` — run introspection and control
+- `monte promote <measurement/run> --confirm=<measurement>` — promote a run
+- `monte env list` / `monte env install` — environment discovery and setup
+- `monte config [--json]` — resolved configuration
+
+## Conventions
+
+- Default subverb shim: `monte eval math` equals `monte eval run math`
+- Exit codes: 0 success, 3+ refusals with reasons
+- `--json` output where supported
+
+## Per-command reference
+
+- Generated from the CLI itself — one page per command (coming from the docs generator, do not hand-edit)

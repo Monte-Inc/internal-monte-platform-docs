@@ -1,0 +1,26 @@
+---
+title: "Authoring an environment"
+description: "How to build a new graded environment package"
+---
+
+## Package layout
+
+- Directory under `environments/`, own `pyproject.toml`, uv workspace member
+- The `monte.environments` entry point registration
+
+## Required pieces
+
+- Graded tasks: task shape, ids, solutions
+- Frozen splits: how to derive and vendor them
+- `install.py` hook: data verification and benchmark-config registration
+
+## Reference implementation
+
+- `environments/math` as the worked example
+- `environments/demo` as the minimal mock
+
+## Verifying your environment
+
+- `monte env list` discovery check
+- `monte env install` on the box
+- Smoke eval against a test Measurement

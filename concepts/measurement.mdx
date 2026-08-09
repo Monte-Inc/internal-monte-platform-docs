@@ -1,0 +1,23 @@
+---
+title: "Measurement"
+description: "The frozen unit of evaluation that anchors the loop"
+---
+
+## Definition
+
+- A Measurement is a frozen eval definition over one Environment
+- The contract: everything the loop does is scoped to a Measurement
+
+## What gets frozen
+
+- Splits, eval config, fingerprint at `monte init` time
+- Why immutability matters: comparability across every run that follows
+
+## Lifecycle
+
+- Created by `monte init`, referenced by every other command
+- Relationship to Runs, Lineages, and the Ledger
+
+## Related pages
+
+- Environment, Splits and baselines, Ledger

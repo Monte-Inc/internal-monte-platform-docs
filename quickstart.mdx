@@ -1,47 +1,45 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "From install to your first promoted model"
 ---
-
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
 
 ## Prerequisites
 
-Before you begin, you must have:
+- The box contract: what the GPU box must look like (GPU, NFS layout, access)
+- Local tooling: Python 3.12+, uv, SSH access
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+## Install
 
-## Get started
+- Install the `monte` package
+- Verify with `monte config`
 
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+## Install an environment
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+- `monte env list` — discover available environments
+- `monte env install` — set up box assets for an environment
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+## Initialize a measurement
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+- `monte init <measurement> --env <name>` — freeze splits, eval config, fingerprint
+- What "frozen" means and why it matters
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Run a baseline eval
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+- `monte eval <measurement>` — eval@N against the base model
+- Reading the output
+
+## Train
+
+- `monte train <measurement>` — one train@N chunk
+- `--smoke` for a fast sanity pass
+- `--chained` for continuing a lineage
+
+## Check status
+
+- `monte status <measurement>` — ledger rows and per-lineage delta
+- `monte logs` / `monte show` for run introspection
+
+## Promote
+
+- `monte promote <measurement/run> --confirm=<measurement>` — what promotion does
+- The honest-null case: when not to promote

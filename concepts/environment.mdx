@@ -1,0 +1,24 @@
+---
+title: "Environment"
+description: "Pluggable graded task packages"
+---
+
+## Definition
+
+- An Environment is a package of graded tasks the loop evaluates and trains against
+- Discovered via the `monte.environments` entry point
+
+## Anatomy of an environment
+
+- Own `pyproject.toml` (uv workspace member)
+- Frozen splits shipped with the package
+- `install.py` hook — box-asset verification and registration
+
+## Available environments
+
+- `demo` — mock-only, for testing the loop itself
+- `math` — real graded math tasks
+
+## Related pages
+
+- Environment authoring guide, Measurement, Splits and baselines
