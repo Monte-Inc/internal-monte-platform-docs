@@ -8,20 +8,23 @@
     "dark": "#3730A3"
   },
   "favicon": "/favicon.png",
+  "banner": {
+    "content": "**Closed beta.** Monte is in closed beta. Interfaces and docs change quickly.",
+    "dismissible": true
+  },
   "navigation": {
     "groups": [
       {
         "group": "Getting started",
-        "pages": ["index", "quickstart"]
+        "pages": ["index", "quickstart", "real-box"]
       },
       {
         "group": "Concepts",
         "pages": [
+          "concepts/loop",
           "concepts/measurement",
           "concepts/environment",
-          "concepts/run-lineage",
-          "concepts/ledger",
-          "concepts/splits-baselines"
+          "concepts/runs-ledger"
         ]
       },
       {

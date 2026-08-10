@@ -1,27 +1,40 @@
 ---
-title: "Console overview"
-description: "The read-only web view over the ledger"
+title: "Console"
+description: "The read-only web view over the Ledger"
 ---
 
-## What the console is
+The Console shows what the Ledger already knows. It is strictly read-only: the CLI is the only write path, and there is no `monte console` command. The server imports `monte.api` and nothing else. Reading Ledger files directly is banned, there as everywhere.
 
-- FastAPI server plus Next.js web app
-- Strictly read-only — the CLI is the only write path
+## Run it locally
 
-## Running it locally
+The Console is two processes:
 
-- Starting the server
-- Starting the web app
-- Where it looks for ledger data
+```bash
+# API server
+uv run uvicorn routes:app --app-dir console/server
+
+# Web app, proxies /api to 127.0.0.1:8000
+cd console/web && npm run dev
+```
+
+The server reads `MONTE_ROOT` for the data root. The web app finds the server through `MONTE_API_ORIGIN`, default `http://127.0.0.1:8000`. On a laptop with an empty data root, seed demo data first:
+
+```bash
+MONTE_ROOT=~/monte-console-dev uv run python console/seed.py
+```
+
+Seeding runs mock and lands in seconds. A second seed against the same root refuses, because a Measurement is frozen at init. Point `MONTE_ROOT` elsewhere or delete the directory.
 
 ## Pages
 
-- Ledger — measurements and their rows
-- Runs — run list and run detail
-- Tasks — per-task results
-- Environments, Evaluations, Training views
-- Live events
+- **Training** and **Evaluations**: the Measurements, each opening its Ledger table: Run rows with a score column, the Split each Run scored, and an Evidence toggle that hides smoke rows.
+- **Run detail**: the row in full: plan settings, base model, serving stack, checkpoint relations, live events, and for training Runs the reward curve.
+- **Per-task results**: every Trace of an eval Run with its score, expected answer, and extracted answer.
+- **Environments**: a task browser for each installed Environment.
 
-## API routes
+## Current limits
 
-- `/api/measurements`, `/api/runs`, `/api/environments`, `/api/config` and friends
+- A Trace does not carry its Task's question text. Cross-reference the task ID in the Environment browser.
+- Per-task results are not paginated server-side. The test Split ships whole and paginates in the browser.
+- Training stats show reward only. Loss and KL from the training log are not parsed yet.
+- There is no archive or delete. The Evidence toggle is the only filter.

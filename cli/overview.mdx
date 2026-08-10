@@ -1,25 +1,114 @@
 ---
-title: "CLI overview"
-description: "The monte command surface at a glance"
+title: "CLI reference"
+description: "Every monte command, convention, and exit code"
 ---
 
-## Command map
-
-- `monte init <measurement> --env <name>` — freeze a new Measurement
-- `monte eval <measurement>` — run eval@N
-- `monte train <measurement>` — run one train@N chunk (`--smoke`, `--chained`)
-- `monte status <measurement>` — ledger rows and per-lineage delta
-- `monte logs` / `monte show` / `monte stop <ref>` — run introspection and control
-- `monte promote <measurement/run> --confirm=<measurement>` — promote a run
-- `monte env list` / `monte env install` — environment discovery and setup
-- `monte config [--json]` — resolved configuration
+The `monte` CLI is the only write path into the platform. This page states the conventions once, then lists every command.
 
 ## Conventions
 
-- Default subverb shim: `monte eval math` equals `monte eval run math`
-- Exit codes: 0 success, 3+ refusals with reasons
-- `--json` output where supported
+- **Default subverb.** `monte eval math` means `monte eval run math`. Same for `train`. The `env` group has no default on purpose: list and install are different intents.
+- **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object persisted as `plan.json` and hashed into the row's provenance.
+- **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `env list`, and `config` only. Stdout carries pure JSON: the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
+- **Refusals.** Anything the platform declines exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 
-## Per-command reference
+## Commands
 
-- Generated from the CLI itself — one page per command (coming from the docs generator, do not hand-edit)
+### monte init
+
+```bash
+monte init <measurement> --env <environment>
+```
+
+Creates the Measurement: freezes the Splits, the eval settings, and the Environment fingerprint into `measurement.json`. Refuses an existing name (`E_MEASUREMENT_EXISTS`).
+
+### monte eval
+
+```bash
+monte eval <measurement> [--model M] [--split dev|test] [--step N] [--smoke] [--yes] [--dry-run] [--json]
+```
+
+Scores a model on a Split and appends the row. The default Split is dev. The default step is the Lineage's newest Checkpoint. Test evals are budgeted: Baseline and final claim only.
+
+### monte train
+
+```bash
+monte train <measurement> [--model M] [--smoke] [--chained] [--yes] [--dry-run] [--json]
+```
+
+Trains one chunk, chained from the Lineage's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
+
+### monte status
+
+```bash
+monte status <measurement> [--json]
+```
+
+Prints the Run rows and the per-Lineage delta lines, paired when possible and labelled unpaired when not. Also prints Cycles with their strike verdicts and the checkpoint ladder.
+
+### monte logs, show, stop
+
+```bash
+monte logs <measurement>/<run> [--follow]
+monte show <measurement>/<run> [--json]
+monte stop <measurement>/<run>
+```
+
+`logs` prints the Run's event file as JSON lines. `show` prints one full row with all provenance fields. `stop` terminates a running Run and the row reads as abandoned.
+
+### monte promote
+
+```bash
+monte promote <measurement>/<run> --dest <path|user@host:path> --confirm <measurement>
+```
+
+Exports a succeeded training Run's servable Checkpoint to `--dest`, sha256-verified. It then prints the file count and the destination disk usage.
+
+### monte env
+
+```bash
+monte env list [--json]
+monte env install <name>
+monte env install --all
+```
+
+`list` shows each Environment and its Gym benchmarks. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
+
+### monte config
+
+```bash
+monte config [--json]
+```
+
+Prints the resolved configuration: the data root and its source, the GPU check command, mock seconds, the base-model pin, the installed Environments, and the schema version.
+
+## Environment variables
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `MONTE_ROOT` | durable data root: Measurements, Ledger, Splits | `~/monte-post-training/monte-platform` |
+| `MONTE_LOCAL` | disposable box-local root: venvs, caches, scratch | `~/monte` |
+| `MONTE_GPU_CHECK_CMD` | command for the foreign-process GPU check in a real preflight. Empty disables that check | auto |
+| `MONTE_MOCK_SECONDS` | duration of a mock run, in seconds | `30` |
+| `MONTE_GPU_MEM_UTIL` | fraction of GPU memory the eval server can claim | `0.9` |
+| `MONTE_DOCKER` | docker command override, for example `sudo docker` | `docker` |
+
+## Exit codes
+
+| Code | Name | Fires when |
+|---|---|---|
+| 0 | success | |
+| 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
+| 2 | usage | Click usage errors: a bad flag or a missing argument |
+| 3 | `E_NO_BASELINE` | train without a matching-Lineage Baseline |
+| 4 | `E_FROZEN_FIELD` | a launch would change a frozen Measurement field |
+| 5 | `E_NOT_COMPARABLE` | comparability config does not match the Lineage |
+| 6 | `E_PREFLIGHT` | preflight failed: fingerprint drift, disk floor, test budget |
+| 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
+| 8 | `E_MEASUREMENT_EXISTS` | init on a name that exists |
+| 9 | `E_NOT_FOUND` | no such Measurement, Run, or promotable Checkpoint |
+| 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent |
+| 12 | `E_SERVING` | the eval serving stack failed |
+| 13 | `E_VERIFICATION` | a promote checksum or load verification failed |

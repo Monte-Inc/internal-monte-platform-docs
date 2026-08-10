@@ -1,0 +1,49 @@
+---
+title: "Runs, lineages, and the ledger"
+description: "How executions are recorded, chained, and read"
+---
+
+Everything Monte does is a Run, and every Run is a row in its Measurement's Ledger. This page covers the row's whole life: launch, record, chain, read.
+
+## Runs
+
+A Run is one of two kinds. A training Run (`train@N`) produces a Checkpoint. An eval Run (`eval@N`) scores one, with `eval@0` scoring the base model. **N is the Checkpoint's absolute step count, never a run index.** The training Run that ends at step 50 is `train@50`. `eval@50` scores that Checkpoint.
+
+Address a Run as `<measurement>/<run>` anywhere the CLI takes one (`logs`, `show`, `stop`, `promote`). Use the run ID or an alias like `eval@0`. When an alias matches several rows, the latest wins.
+
+## Checkpoints
+
+A Checkpoint is the model's saved state at one step. Two shapes matter. The full resume set (weights, optimizer, and dataloader state) continues training. The servable folder (an HF-layout weights and tokenizer directory) is what an inference server loads. A load-check proves a servable folder actually serves: one prompt through a real serving stack. It is not a score and not a Run. The final claim's Checkpoint selection is loop discipline: see [The loop](/concepts/loop).
+
+## Lineages
+
+A Lineage is the group of Runs sharing a base model and comparability config. You read deltas within a Lineage, never across two. Each Lineage needs its own Baseline. Monte derives a Lineage from row fields at read time and never stores it.
+
+## The Ledger
+
+The Ledger is append-only: rows are never rewritten. Each Run writes its own event file, one writer per file. Every surface (the CLI, the Console) reads through `monte.api`, never the files. The file format is internal.
+
+Every row records full provenance: git SHA, config hash, Split hash, eval-config hash, comparability hash, cost, and an image digest. A training Run's digest is the true container image digest. An eval Run serves from a venv, so its digest is a `venv:` hash over the serving stack's resolved versions. Any score is traceable to its exact inputs.
+
+## Traces
+
+A Trace is one Run's attempt at one Task: the rollout verbatim plus the grader's fields (score, expected and extracted answer). Per-task results and Traces have no CLI command. Read them in the [Console](/console/overview), or through `monte.api` from Python.
+
+## One command at a time
+
+One lock per Measurement serializes mutating commands. A second command refuses instead of waiting. A dead process on the same host reclaims automatically. If a gone box left a lock behind, you remove it by hand: see [Troubleshooting](/troubleshooting).
+
+## Run artifacts
+
+Each run directory on the durable tier holds the launched plan (`plan.json`), the event file (`events.jsonl`), and for training Runs the training log and tensorboard files.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="The loop" href="/concepts/loop">
+    What the rows mean: baselines, deltas, and the final claim.
+  </Card>
+  <Card title="CLI reference" href="/cli/overview">
+    The commands that write and read these rows.
+  </Card>
+</CardGroup>

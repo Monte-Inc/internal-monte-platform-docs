@@ -1,24 +1,45 @@
 ---
 title: "Environment"
-description: "Pluggable graded task packages"
+description: "The graded task package a Measurement freezes"
 ---
 
-## Definition
+An Environment is the graded world: the tasks, their gold answers, and the grader that scores an attempt. It is delivered as an installable Python package. Installing the package is what makes its name available to `monte init`.
 
-- An Environment is a package of graded tasks the loop evaluates and trains against
-- Discovered via the `monte.environments` entry point
+## Tasks
 
-## Anatomy of an environment
+A Task is one question with its gold answer. It is the unit a Split enumerates, the grader scores, and rollouts run against. A Task belongs to the Environment and is identical for every Run.
 
-- Own `pyproject.toml` (uv workspace member)
-- Frozen splits shipped with the package
-- `install.py` hook — box-asset verification and registration
+## Anatomy
 
-## Available environments
+An Environment implements a small protocol:
 
-- `demo` — mock-only, for testing the loop itself
-- `math` — real graded math tasks
+- `splits()` names its task-ID lists.
+- `grade(task, output)` returns a score, under a declared grader identity.
+- `fingerprint()` hashes the task source, the grader, and the harness config.
+- `install()` and `verify_install()`, both optional, set up and check box assets.
+
+Discovery runs through the `monte.environments` entry point. The box bootstrap never knows an Environment by name: `monte env install --all` installs whatever is registered.
+
+## The grader
+
+The grader is the non-negotiable part. Ungraded data is never an input to the platform. One grader serves eval, training, and spot-checks, so scores cannot drift apart by construction.
+
+## Available Environments
+
+| Name | Kind | Purpose |
+|---|---|---|
+| `demo` | mock-only | exercises the loop itself, no real data |
+| `math` | real | graded math tasks, frozen Splits verified against a manifest |
+
+The `math` Splits live on the durable data root, not in the repo. They are seeded by a manifest-verified copy and never derived on a box.
 
 ## Related pages
 
-- Environment authoring guide, Measurement, Splits and baselines
+<CardGroup cols={2}>
+  <Card title="Authoring an environment" href="/environments/authoring">
+    Build one: package shape, rules, and how to test it.
+  </Card>
+  <Card title="Measurement" href="/concepts/measurement">
+    How an Environment gets frozen into something measurable.
+  </Card>
+</CardGroup>
