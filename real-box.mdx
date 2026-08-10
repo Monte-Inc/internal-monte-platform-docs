@@ -1,0 +1,43 @@
+---
+title: "Run on a real box"
+description: "The box contract, bootstrap, and the two storage tiers"
+---
+
+Real evals and real training run on a single-GPU Linux box. Monte does not know any box by name. Any host that passes the contract below works.
+
+## The box contract
+
+- One GPU with about 80 GB of VRAM and a working NVIDIA driver.
+- At least 350 GB of free disk on the home filesystem.
+- Persistent storage for the durable data root.
+- Outbound network to GitHub, PyPI, Hugging Face, NVIDIA NGC (`nvcr.io`), and `astral.sh` for the uv installer.
+- For training: Docker with the NVIDIA container toolkit. The training stack runs only inside the pinned NeMo-RL container. Bare-metal training is a dead end, not a shortcut.
+
+`scripts/setup-remote.sh` asserts this contract before it changes anything.
+
+## Bootstrap
+
+Bootstrap is idempotent. Run it again at any time. It asserts the contract, installs uv and the repo, clones the pinned NeMo Gym, downloads the base-model snapshot, and runs `monte env install --all`. A cold box takes about 25 minutes. A warm one takes about 7.
+
+## Two storage tiers
+
+| Tier | Root | Holds | Survives a box loss |
+|---|---|---|---|
+| Disposable | `MONTE_LOCAL` (default `~/monte`) | repo, venvs, caches, scratch rollouts | no. Bootstrap rebuilds it |
+| Durable | `MONTE_ROOT` data root | Measurements, frozen Splits, the Ledger, Run artifacts | yes. This is the record |
+
+`monte config` prints the resolved data root and where the value came from.
+
+## Crossing from laptop to box
+
+A Run is real when the serving or container stack is present on the box, and mock when it is not. Monte refuses to guess silently:
+
+- On a GPU machine without the stack, a Run refuses instead of silently mocking. Bootstrap installs the stack.
+- Once a Measurement holds real evidence, Monte refuses a mock Run into it.
+- Training preflight checks free disk and refuses below its floors. The refusal names the exact floor and which filesystem is short.
+
+Two knobs help imperfect boxes. `MONTE_GPU_MEM_UTIL` caps the fraction of GPU memory the eval server can claim (default `0.9`). `MONTE_DOCKER` overrides the docker command, for example `sudo docker`.
+
+<Note>
+Box addresses, SSH configuration, and host names are operational details. They stay out of these docs on purpose.
+</Note>

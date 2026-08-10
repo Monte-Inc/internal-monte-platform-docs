@@ -2,7 +2,7 @@
 
 Documentation site for the Monte platform (`monte-nemo-platform`), built on [Mintlify](https://mintlify.com). Pages are MDX with YAML frontmatter; navigation and theme live in `docs.json`.
 
-Current state: skeleton only — every page is a section outline (headings + bullets), no prose yet. The CLI reference pages will be generated from the Typer app in `monte-nemo-platform` (`scripts/gen-cli-docs.py`), not hand-written.
+Current state: full content pass done (2026-08-10) — every page carries real prose, written against the code in `monte-nemo-platform` and verified against it. Style follows ASD-STE100 flavored mode (the `ste-writing` skill): short active sentences, one name per thing, linted with `ste-lint.py`. The CLI reference is hand-written for now; a `gen-cli-docs.py` generator from the Typer app remains a possible later step.
 
 ## Local preview
 

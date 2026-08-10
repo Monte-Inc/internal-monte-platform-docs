@@ -1,23 +1,40 @@
 ---
 title: "Troubleshooting"
-description: "Common failures and how to read refusals"
+description: "Refusals and common failures"
 ---
 
-## Box setup
+Monte fails closed. When it declines, it exits 3 or higher and prints `CODE: cause (fix)` on stderr. Read the fix first: it is usually the answer. The [exit-code table](/cli/overview#exit-codes) lists every code.
 
-- Fresh-box bootstrap issues (SSH, NFS layout)
-- GPU / driver mismatches
+## Common refusals
 
-## CLI refusals
+### train refuses with E_NO_BASELINE
 
-- Exit codes 3+ — what each refusal class means
-- Frozen-Measurement conflicts
+The Lineage has no Baseline eval. Run `monte eval <measurement>` first. Every Lineage needs its own `eval@0`.
 
-## Eval and training runs
+### E_CONFIRM in a script
 
-- Reading `monte logs` for a stuck run
-- Known NeMo-ecosystem gotchas that constrain v1
+Two causes, one code. For `eval` and `train` without a TTY: pass `--yes`. For `promote`: pass `--confirm <measurement-name>`, typed exactly.
+
+### A lock refuses my command
+
+One lock per Measurement. If the holding process is alive, wait for it or `monte stop` it. If it died on this host, the next command reclaims the lock automatically. If a gone box left the lock behind, remove the `.lock` file in the Measurement's directory under the data root by hand.
+
+### My Run mocked, or refused to mock
+
+Mock against real is stack detection: a Run is real when the serving or container stack is present on the box. On a GPU machine without the stack, Monte refuses to mock silently. Run bootstrap to install the stack. A mock-only Environment mocks freely anywhere. Once a Measurement holds real evidence, Monte refuses mock Runs into it.
+
+### env install refuses: data does not match the manifest
+
+The frozen data on the box drifted or is incomplete. Re-seed the durable data root from the verified copy. Never re-derive Splits on a box.
+
+### Training preflight refuses: disk
+
+The refusal names the floor and which filesystem is short, home or the data root. Free disk there and run again.
+
+## A stuck run
+
+`monte logs <measurement>/<run> --follow` tails the event file. `monte stop <measurement>/<run>` terminates it: the row reads as abandoned, and the Ledger keeps it.
 
 ## FAQ
 
-- Placeholder — collect real questions as they come up
+Deliberately thin. Real questions land here as they come up.

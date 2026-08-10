@@ -1,26 +1,52 @@
 ---
-title: "Authoring an environment"
-description: "How to build a new graded environment package"
+title: "Authoring an Environment"
+description: "Build a new graded Environment package"
 ---
 
-## Package layout
+An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape. `math` is the full worked example.
 
-- Directory under `environments/`, own `pyproject.toml`, uv workspace member
-- The `monte.environments` entry point registration
+## Package shape
 
-## Required pieces
+Register the loader as an entry point:
 
-- Graded tasks: task shape, ids, solutions
-- Frozen splits: how to derive and vendor them
-- `install.py` hook: data verification and benchmark-config registration
+```toml
+[project.entry-points."monte.environments"]
+math = "monte_env_math:load_environment"
+```
 
-## Reference implementation
+Implement the protocol: `splits()`, `grade()`, `fingerprint()`, and the optional `install()` and `verify_install()`.
 
-- `environments/math` as the worked example
-- `environments/demo` as the minimal mock
+## Rules that bite
 
-## Verifying your environment
+- **Never depend on `monte`.** Declaring `monte` in your `pyproject.toml` cycles the uv workspace graph. And the resources server runs in its own venv with no `monte` installed, so a top-level `import monte` crashes it. Import `monte` lazily inside functions, never at module top.
+- **The prompt template is yours, and it is frozen.** The Environment owns its prompt file, and the prompt bytes are part of the fingerprint. An edit to the prompt is a Measurement change, not a tweak.
+- **One name, once.** A duplicate Environment name across installed packages refuses at discovery. A broken `load_environment()` raises a Refusal that names the distribution.
 
-- `monte env list` discovery check
-- `monte env install` on the box
-- Smoke eval against a test Measurement
+## Frozen data
+
+Real task data lives on the durable data root, never in the repo. It is seeded by a manifest-verified copy and never derived on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent.
+
+## The two twins
+
+Two different things get called a twin. Keep them apart:
+
+- **The Gym row twin**: the `*.gym.jsonl` files, re-derived from the frozen source through the current prompt renderer. These are the rows Gym consumes.
+- **The resources-server plant**: your FastAPI grading app plus its configs, copied to a name-derived Gym path. Training and eval both grade through this one server.
+
+## Test what you wrote
+
+1. `uv run pytest`: the `test_env_*` files cover grader and install-hook behavior.
+2. `gym env test --resources-server <name>` exercises the resources server. `gym env start` plus a POST to `/verify` checks the live plant. These are Gym commands, not monte ones.
+3. `monte env list` confirms discovery. `monte env install <name>` on the box verifies the data.
+4. A smoke eval against a scratch Measurement closes the loop.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Environment" href="/concepts/environment">
+    The concept: what an Environment is and guarantees.
+  </Card>
+  <Card title="Quickstart" href="/quickstart">
+    See the loop run against the demo Environment.
+  </Card>
+</CardGroup>

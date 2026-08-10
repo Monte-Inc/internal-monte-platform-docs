@@ -1,45 +1,49 @@
 ---
 title: "Quickstart"
-description: "From install to your first promoted model"
+description: "Your first loop on a laptop, no GPU needed"
 ---
 
-## Prerequisites
+Off the GPU box, every Run mocks: real CLI, real Ledger, fake scores. That makes a laptop the safe place to learn the loop. You need Python 3.12+, uv, and a clone of `monte-nemo-platform`.
 
-- The box contract: what the GPU box must look like (GPU, NFS layout, access)
-- Local tooling: Python 3.12+, uv, SSH access
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    uv sync
+    ```
+    This creates the project `.venv`. All commands below run through `uv run`.
+  </Step>
+  <Step title="List the installed Environments">
+    ```bash
+    uv run monte env list
+    ```
+    `demo` appears as mock-only. It exists to exercise the loop itself.
+  </Step>
+  <Step title="Create a Measurement">
+    ```bash
+    uv run monte init hello --env demo
+    ```
+    This freezes the Splits, the eval settings, and the Environment fingerprint. The name `hello` is yours to choose.
+  </Step>
+  <Step title="Run the Baseline eval">
+    ```bash
+    uv run monte eval hello
+    ```
+    The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. This is `eval@0`, the score you compare every later Run against.
+  </Step>
+  <Step title="Train a smoke chunk">
+    ```bash
+    uv run monte train hello --smoke
+    ```
+    A smoke Run is a capped sanity pass. It is never evidence: it cannot be a Baseline, a chain parent, or a promote source.
+  </Step>
+  <Step title="Read the Ledger">
+    ```bash
+    uv run monte status hello
+    ```
+    You get the Run rows and the Lineage's Baseline line. Smoke rows carry a `[not evidence]` marker. There is no delta yet: a delta appears after a real training chunk and its follow-up eval.
+  </Step>
+</Steps>
 
-## Install
-
-- Install the `monte` package
-- Verify with `monte config`
-
-## Install an environment
-
-- `monte env list` — discover available environments
-- `monte env install` — set up box assets for an environment
-
-## Initialize a measurement
-
-- `monte init <measurement> --env <name>` — freeze splits, eval config, fingerprint
-- What "frozen" means and why it matters
-
-## Run a baseline eval
-
-- `monte eval <measurement>` — eval@N against the base model
-- Reading the output
-
-## Train
-
-- `monte train <measurement>` — one train@N chunk
-- `--smoke` for a fast sanity pass
-- `--chained` for continuing a lineage
-
-## Check status
-
-- `monte status <measurement>` — ledger rows and per-lineage delta
-- `monte logs` / `monte show` for run introspection
-
-## Promote
-
-- `monte promote <measurement/run> --confirm=<measurement>` — what promotion does
-- The honest-null case: when not to promote
+<Note>
+A real score needs a real box. When you are ready, read [Run on a real box](/real-box).
+</Note>
