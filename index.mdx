@@ -3,7 +3,13 @@ title: "Introduction"
 description: "What Monte is and why it exists"
 ---
 
-Monte is our internal platform for one job: make a model measurably better at a graded task set, and prove it. You define a Measurement. The loop returns a better model or an honest null result. Nothing else counts as an outcome.
+AI agents can handle individual tasks in LLM post-training research. They can change a training recipe, launch an experiment, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
+
+An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on one result or metric while losing sight of the wider direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
+
+Monte exists to give agents a stable picture of that process. It records the information needed to understand and compare each result, and it preserves how the work develops over time. Agents can use that structure to manage several lines of work, revisit earlier decisions, and choose what to try next from the full record.
+
+Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method, framework, and research strategy.
 
 <Note>
 Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
