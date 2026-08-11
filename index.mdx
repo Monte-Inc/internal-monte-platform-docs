@@ -1,6 +1,5 @@
 ---
 title: "Introduction"
-description: "What Monte is and why it exists"
 ---
 
 AI agents can handle individual tasks in LLM post-training research. They can change a training recipe, launch an experiment, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
@@ -17,17 +16,19 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-The `monte` CLI drives everything on a single GPU box. Training and evaluation run through NVIDIA NeMo: Gym for rollouts and grading, NeMo-RL for training. Every Run lands as a row in an append-only Ledger. You read scores as paired deltas against a frozen Baseline, never as bare numbers.
+Monte gives post-training work a common structure. An Environment defines the tasks and grader. A Measurement freezes the Environment, Splits, and evaluation settings. Each training or evaluation becomes a Run that records its model, plan, results, artifacts, cost, and provenance. Monte appends every Run to the Measurement's Ledger and groups comparable Runs into Lineages. This structure shows an agent what changed, which results can be compared, and how each result was produced.
 
-## The pieces
+## The structure
 
-| Piece | What it is |
+| Piece | Role |
 |---|---|
-| CLI | The `monte` command. The only write path. |
-| Environments | Installable packages of graded tasks. Each one owns its grader. |
-| Measurements | Frozen definitions of what is measured and how. |
-| Ledger | The append-only record of every Run. The single source of truth. |
-| Console | A read-only web view over the same Ledger. |
+| Environment | Defines the graded tasks and their grader. |
+| Measurement | Freezes one Environment, its Splits, and its evaluation settings. |
+| Run | Records one training or evaluation, including its inputs, outputs, and provenance. |
+| Lineage | Groups Runs that share a base model and comparison settings. |
+| Ledger | Preserves the append-only record of every Run in a Measurement. |
+| CLI | Writes to this structure through the `monte` command. |
+| Console | Reads the same structure without changing it. |
 
 ## Start here
 
