@@ -16,24 +16,26 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-An Experiment groups related work around one objective. It uses one Measurement by default, but it can use more. A Measurement defines how Monte judges results. The Measurement uses an Environment, which supplies the tasks and grader. Each training or evaluation is a Run. Every Run belongs to one Experiment and records its model, configuration, results, artifacts, cost, and provenance.
+An Environment supplies the tasks and the grader. It defines what counts as a correct answer. A Measurement freezes how you use those tasks: which ones, and under which eval settings. The freeze keeps a score taken today comparable to one taken in six months.
+
+Inside a Measurement, the Runs that share a base model form a Cohort. Each Cohort holds one Baseline, and a delta never crosses from one Cohort into another. Each training or evaluation is a Run, and it records its model, configuration, results, artifacts, cost, and provenance.
 
 ```mermaid actions={false}
 flowchart TD
-    E["Experiment<br/>objective and related work"]
-    M["Measurement<br/>how results are judged"]
     ENV["Environment<br/>tasks and grader"]
-    R["Runs<br/>what the agent tried"]
-    T["Training Run"]
-    V["Evaluation Run"]
+    M["Measurement<br/>frozen: which tasks, which eval settings"]
+    C["Cohort<br/>one base model, one Baseline"]
+    T["Training Run<br/>produces a Checkpoint"]
+    V["Evaluation Run<br/>scores a Checkpoint"]
 
-    E -->|"uses one by default"| M
-    M -->|"uses"| ENV
-    E -->|"Runs originate here"| R
-    R --> T
-    R --> V
-    R -. "each Run uses one Measurement" .-> M
+    ENV -->|"supplies"| M
+    M -->|"groups its Runs into"| C
+    C --> T
+    C --> V
+    T -->|"Checkpoint"| V
 ```
+
+More than one Measurement can use the same Environment — the same tasks, frozen under different eval settings. Today a Checkpoint stays inside the Measurement whose training Run produced it.
 
 ## Start here
 

@@ -12,10 +12,10 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **Experiment** — a high-level investigation that groups related Runs around one objective. It uses one Measurement by default but may use more.
+- **Experiment** — RESERVED, not implemented. A high-level investigation that groups related Runs around one objective. A person declares one, so it is never derived — that is what separates it from Cohort and Lineage. No code creates, stores, or reads one. Do not document it as something a reader can use.
 - **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
 - **Environment** — a pluggable graded task package. Never "dataset".
-- **Run** — one eval or train execution that originates in exactly one Experiment and is recorded in a Measurement's Ledger. The model and the Recipe bind here.
+- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model and the Recipe bind here.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
 - **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by the Recipe that produced it. Also derived. Checkpoints form a tree, not a line.
 - **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, defaults from the Measurement, pinned by content hash.
