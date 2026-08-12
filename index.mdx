@@ -17,27 +17,32 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-An Environment supplies graded Tasks and a grader. You can create several Measurements from one Environment. Each Measurement freezes a different evaluation contract.
+An Environment gives you graded Tasks and a grader. `monte init` creates a Measurement over one Environment. The Measurement fixes which Tasks you score and how you score them. It holds no model. Each Run names its own model.
 
-An eval Run applies one Measurement to one model or Checkpoint. If you apply three Measurements, Monte records three eval Runs and three separate results.
+Then you work the loop. First, score the base model to get the Baseline. Next, train one chunk and score the Checkpoint it produces. Compare that score with the Baseline. Repeat until you stop. Monte never stops the loop for you.
 
 ```mermaid actions={false}
-flowchart LR
-    ENV["Environment<br/>graded Tasks and grader"]
-    M["Measurements<br/>A · B · C"]
-    MODEL["Model or Checkpoint"]
-    E["Eval Runs<br/>one per Measurement"]
-    R["Separate results"]
+flowchart TD
+    ENV["Environment"]
 
-    ENV -->|"create"| M
-    M --> E
-    MODEL --> E
-    E --> R
+    subgraph M["Measurement"]
+        BM["Base model"]
+        BASE["Baseline"]
+        CP["Checkpoint"]
+        SCORE["Change from the Baseline"]
+        FINAL["Final score on test"]
+
+        BM -->|"monte eval"| BASE
+        BM -->|"monte train"| CP
+        CP -->|"monte eval"| SCORE
+        SCORE -->|"monte train"| CP
+        SCORE -->|"monte eval --split test"| FINAL
+    end
+
+    ENV -->|"monte init"| M
+    FINAL -->|"monte promote"| PROM(["Promoted weights"])
+    FINAL -->|"no improvement"| NONE(["Nothing promoted"])
 ```
-
-A Training Run uses a Recipe and produces a Checkpoint. You then choose which Measurements to apply to that Checkpoint. Each Measurement records its eval Runs in its own Ledger. Each Cohort has its own Baseline, so deltas never cross a Cohort boundary.
-
-Today, a Checkpoint stays inside the Measurement whose Training Run produced it. You cannot yet apply several Measurements to one produced Checkpoint. Monte supports this relationship for base models, but the Checkpoint workflow needs a platform change.
 
 ## Start here
 
