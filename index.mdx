@@ -6,7 +6,7 @@ AI agents can handle individual tasks in LLM post-training research. They can ch
 
 An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on one result or metric while losing sight of the wider direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
 
-Monte exists to give agents a stable picture of that process. It records the information needed to understand and compare each result, and it preserves how the work develops over time. Agents can use that structure to manage several lines of work, revisit earlier decisions, and choose what to try next from the full record.
+Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to manage several lines of work, revisit decisions, and choose what to try next.
 
 Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method, framework, and research strategy.
 
@@ -16,19 +16,24 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-Monte gives post-training work a common structure. An Environment defines the tasks and grader. A Measurement freezes the Environment, Splits, and evaluation settings. Each training or evaluation becomes a Run that records its model, plan, results, artifacts, cost, and provenance. Monte appends every Run to the Measurement's Ledger and groups comparable Runs into Lineages. This structure shows an agent what changed, which results can be compared, and how each result was produced.
+An Experiment groups related work around one objective. It uses one Measurement by default, but it can use more. A Measurement defines how Monte judges results. The Measurement uses an Environment, which supplies the tasks and grader. Each training or evaluation is a Run. Every Run belongs to one Experiment and records its model, configuration, results, artifacts, cost, and provenance.
 
-## The structure
+```mermaid actions={false}
+flowchart TD
+    E["Experiment<br/>objective and related work"]
+    M["Measurement<br/>how results are judged"]
+    ENV["Environment<br/>tasks and grader"]
+    R["Runs<br/>what the agent tried"]
+    T["Training Run"]
+    V["Evaluation Run"]
 
-| Piece | Role |
-|---|---|
-| Environment | Defines the graded tasks and their grader. |
-| Measurement | Freezes one Environment, its Splits, and its evaluation settings. |
-| Run | Records one training or evaluation, including its inputs, outputs, and provenance. |
-| Lineage | Groups Runs that share a base model and comparison settings. |
-| Ledger | Preserves the append-only record of every Run in a Measurement. |
-| CLI | Writes to this structure through the `monte` command. |
-| Console | Reads the same structure without changing it. |
+    E -->|"uses one by default"| M
+    M -->|"uses"| ENV
+    E -->|"Runs originate here"| R
+    R --> T
+    R --> V
+    R -. "each Run uses one Measurement" .-> M
+```
 
 ## Start here
 

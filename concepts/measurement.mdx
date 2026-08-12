@@ -1,24 +1,23 @@
 ---
 title: "Measurement"
-description: "The frozen unit of evaluation that anchors the loop"
+description: "A frozen evaluation contract used by an Experiment"
 ---
 
-A Measurement is a frozen definition of one evaluation over exactly one [Environment](/concepts/environment). It fixes what you measure and how you measure it. Every other object in Monte belongs to one Measurement.
+A Measurement is a frozen evaluation contract over exactly one [Environment](/concepts/environment). It fixes what you measure and how you measure it. An Experiment uses one Measurement by default but may use more.
 
 ## Definition
 
-The Environment supplies the graded tasks. The Measurement freezes how the loop uses them: which tasks, with which eval settings, against which grader. The grader is the one part the loop cannot run without. Ungraded data is never an input to a Measurement.
+The Environment supplies the graded tasks. The Measurement freezes how evaluation uses them: which tasks, with which eval settings, against which grader.
 
-A Measurement holds no model. Each Run binds its own model, so you can measure many models against the same Measurement.
+A Measurement holds no model or training configuration. Each Run binds its model and exact inputs. A training Run records its training data, recipe, and hyperparameters. Runs under the same Measurement can compare different approaches under the same evaluation contract.
 
 ## What gets frozen
 
-`monte init` freezes four things:
+`monte init` freezes three things:
 
-1. **Splits**: one task-ID file per split (`splits/dev.txt` and friends), with each file's path, sha256, and task count pinned in `measurement.json`.
+1. **Evaluation Splits**: the task partitions used for evaluation, with each file's path, sha256, and task count pinned in `measurement.json`.
 2. **Eval settings**: the sampling and grading settings that every eval Run uses.
-3. **Train settings**: the recipe and the steps per chunk that every training Run reads.
-4. **Fingerprint**: a content hash of the task source, the grader, and the harness config.
+3. **Fingerprint**: a content hash of the task source, the grader, and the harness config.
 
 The freeze is what makes scores comparable. Two Runs under one Measurement answer the same tasks under the same rules. A changed fingerprint is a different Measurement, not a new version of the same one.
 

@@ -1,7 +1,3 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
@@ -16,9 +12,10 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **Measurement** — a frozen eval definition over one Environment. Capitalize. Never "benchmark" or "eval suite".
+- **Experiment** — a high-level investigation that groups related Runs around one objective. It uses one Measurement by default but may use more.
+- **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
 - **Environment** — a pluggable graded task package. Never "dataset".
-- **Run** — one eval or train execution recorded in the Ledger.
+- **Run** — one eval or train execution that originates in exactly one Experiment and is recorded in a Measurement's Ledger. Training data, recipes, and hyperparameters bind here.
 - **Lineage** — a chain of training runs building on one another.
 - **Ledger** — the append-only per-Measurement record. Never "database" or "history".
 - **Split** — a frozen task partition (train pool, dev, test).
