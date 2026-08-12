@@ -7,7 +7,7 @@ The loop is the platform's reason to exist. One turn: train one chunk, eval the 
 
 ## Baseline first
 
-Before any training, `monte eval` scores the base model on the dev Split, and once on test. That is `eval@0`, the Baseline. You read every later score in the Lineage as a paired delta against it. A number with no Baseline is not evidence, and `monte train` refuses a real chunk without one (`E_NO_BASELINE`). Only a smoke Run skips this gate.
+Before any training, `monte eval` scores the base model on the dev Split, and once on test. That is `eval@0`, the Baseline. You read every later score in the Cohort as a paired delta against it. A number with no Baseline is not evidence, and `monte train` refuses a real chunk without one (`E_NO_BASELINE`). Only a smoke Run skips this gate.
 
 ## What counts as evidence
 
@@ -15,7 +15,7 @@ Only admissible Runs count. A `--smoke` run is a capped sanity pass: never a Bas
 
 ## Cycles and strikes
 
-A Cycle is the first admissible eval at a new highest step in its Lineage. A retry at the same step is not a new Cycle. Each Cycle gets a strike verdict: strike means the paired dev delta is not significantly positive. Strikes are labels, nothing more. Nothing stops the loop automatically. The only stop is yours.
+A Cycle is the first admissible eval at a new highest step in its Cohort. A retry at the same step is not a new Cycle. Each Cycle gets a strike verdict: strike means the paired dev delta is not significantly positive. Strikes are labels, nothing more. Nothing stops the loop automatically. The only stop is yours.
 
 ## Paired deltas
 
@@ -39,7 +39,7 @@ If the claim shows improvement, `monte promote` exports the Checkpoint's servabl
   <Card title="Measurement" href="/concepts/measurement">
     The frozen definition every Run binds to.
   </Card>
-  <Card title="Runs, lineages, and the ledger" href="/concepts/runs-ledger">
+  <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">
     How the rows behind the loop are recorded and read.
   </Card>
 </CardGroup>
