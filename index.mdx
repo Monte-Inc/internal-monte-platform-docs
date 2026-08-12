@@ -17,41 +17,28 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-An Environment supplies graded Tasks and a grader. A Measurement freezes how you evaluate those Tasks: the exact Splits, eval settings, and Environment fingerprint. A Measurement is a contract. It does not execute work.
+An Environment supplies graded Tasks and a grader. A Measurement freezes which Tasks you use and how you evaluate them.
 
-Runs do the work. A Baseline eval Run applies the Measurement to a base model. A training Run follows a Recipe and produces a Checkpoint. A follow-up eval Run applies the same Measurement to that Checkpoint. Monte then compares the two eval Runs Task by Task and reports the paired delta.
+First, evaluate the base model to establish a Baseline. Then train one chunk, evaluate the new Checkpoint, and compare it with the Baseline. Repeat until you stop.
 
 ```mermaid actions={false}
 flowchart TD
     ENV["Environment<br/>graded Tasks and grader"]
-    M["Measurement<br/>frozen evaluation contract"]
-    BASE["Base model"]
-    RECIPE["Recipe<br/>how to train"]
-    B["Baseline eval Run<br/>scores the base model"]
-    T["Training Run"]
-    CP["Checkpoint"]
-    E["Follow-up eval Run<br/>scores the Checkpoint"]
-    D["Paired delta<br/>against the Baseline"]
-    L["Ledger<br/>records every Run"]
+    M["Measurement<br/>what to measure and how"]
+    B["Evaluate the base model<br/>establish the Baseline"]
+    T["Train one chunk<br/>produce a Checkpoint"]
+    E["Evaluate the Checkpoint"]
+    D["Compare with the Baseline"]
 
-    ENV -->|"supplies"| M
-    BASE --> B
-    M -->|"applied by"| B
-    BASE --> T
-    RECIPE --> T
-    M -. "train Split and grader" .-> T
-    T -->|"produces"| CP
-    CP --> E
-    M -->|"applied by"| E
-    B --> D
+    ENV -->|"freeze"| M
+    M --> B
+    B --> T
+    T --> E
     E --> D
-    D -. "choose the next step" .-> T
-    B --> L
-    T --> L
-    E --> L
+    D -. "repeat" .-> T
 ```
 
-Inside a Measurement, Monte derives a Cohort from the base model and comparability settings. A Cohort answers **what can you compare?** It has one Baseline, and a delta never crosses its boundary. Monte also derives each Checkpoint's Lineage from its parent links. A Lineage answers **what came from what?**
+Each training or evaluation is a Run. The Measurement's Ledger records every Run. A Cohort tells you which results you can compare. A Lineage tells you where each Checkpoint came from.
 
 One Environment can support several Measurements. Each Measurement freezes an independent evaluation contract and owns its own Ledger. Today, a Checkpoint stays inside the Measurement whose training Run produced it. You cannot yet evaluate one produced Checkpoint under several Measurements.
 
