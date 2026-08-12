@@ -15,12 +15,32 @@ Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — u
 - **Experiment** — a high-level investigation that groups related Runs around one objective. It uses one Measurement by default but may use more.
 - **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
 - **Environment** — a pluggable graded task package. Never "dataset".
-- **Run** — one eval or train execution that originates in exactly one Experiment and is recorded in a Measurement's Ledger. Training data, recipes, and hyperparameters bind here.
-- **Lineage** — a chain of training runs building on one another.
+- **Run** — one eval or train execution that originates in exactly one Experiment and is recorded in a Measurement's Ledger. The model and the Recipe bind here.
+- **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
+- **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by the Recipe that produced it. Also derived. Checkpoints form a tree, not a line.
+- **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, defaults from the Measurement, pinned by content hash.
 - **Ledger** — the append-only per-Measurement record. Never "database" or "history".
 - **Split** — a frozen task partition (train pool, dev, test).
 - **Baseline** — the base-model eval later runs are compared against.
+- **chain** is a **verb**, never a noun: "a Run chains from a Checkpoint". There is no `Chain` object.
 - The CLI is `monte` (code-formatted, lowercase).
+
+Until 2026-08-11 the platform used **Lineage** for what is now **Cohort**.
+Both words are live and mean different things: a Cohort is a set (what is
+comparable), a Lineage is a path (what came from what). Applied across this
+site 2026-08-12 — if you find a page still calling the comparability group a
+Lineage, it was missed and should be fixed.
+
+### Not yet true of the platform
+
+Keep this list short and delete entries as they land — a stale "coming soon"
+is worse than no note at all.
+
+- **Staged training.** A Run may not yet start from a Checkpoint you name:
+  there is no `--parent` or `--from-base`, so a chunk always continues its
+  Cohort's newest Checkpoint, and a Recipe change on that path is refused.
+  Until it lands, do not document branching as something a reader can do.
+  (Platform: `docs/adr/0002-staged-training-is-explicit.md`.)
 
 ## Style preferences
 

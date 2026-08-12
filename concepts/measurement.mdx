@@ -9,7 +9,7 @@ A Measurement is a frozen evaluation contract over exactly one [Environment](/co
 
 The Environment supplies the graded tasks. The Measurement freezes how evaluation uses them: which tasks, with which eval settings, against which grader.
 
-A Measurement holds no model or training configuration. Each Run binds its model and exact inputs. A training Run records its training data, recipe, and hyperparameters. Runs under the same Measurement can compare different approaches under the same evaluation contract.
+A Measurement holds no model or training configuration. Each Run binds its model and exact inputs. A training Run records its training data and the [Recipe](/concepts/runs-ledger#recipes) it ran — the file stating the method, hashed into the Run's plan. Runs under the same Measurement can compare different approaches under the same evaluation contract.
 
 ## What gets frozen
 
@@ -27,7 +27,7 @@ Monte recomputes the fingerprint before each Run. If the Environment changed sin
 
 ## Lifecycle
 
-`monte init <measurement> --env <name>` creates the Measurement. Every later command names it, as in `monte eval math` or `monte status math`. Each eval or train Run appends one row to the Measurement's [Ledger](/concepts/runs-ledger). A [Lineage](/concepts/runs-ledger) and its Baseline belong to one Measurement and never cross it.
+`monte init <measurement> --env <name>` creates the Measurement. Every later command names it, as in `monte eval math` or `monte status math`. Each eval or train Run appends one row to the Measurement's [Ledger](/concepts/runs-ledger). A [Cohort](/concepts/runs-ledger#cohorts) and its Baseline belong to one Measurement and never cross it.
 
 ## Related pages
 
@@ -38,7 +38,7 @@ Monte recomputes the fingerprint before each Run. If the Environment changed sin
   <Card title="The loop" href="/concepts/loop">
     How Splits, Baselines, and deltas judge improvement.
   </Card>
-  <Card title="Runs, lineages, and the ledger" href="/concepts/runs-ledger">
+  <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">
     The record every Run writes to.
   </Card>
 </CardGroup>

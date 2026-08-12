@@ -29,15 +29,19 @@ Creates the Measurement: freezes the Splits, the eval settings, and the Environm
 monte eval <measurement> [--model M] [--split dev|test] [--step N] [--smoke] [--yes] [--dry-run] [--json]
 ```
 
-Scores a model on a Split and appends the row. The default Split is dev. The default step is the Lineage's newest Checkpoint. Test evals are budgeted: Baseline and final claim only.
+Scores a model on a Split and appends the row. The default Split is dev. The default step is the Cohort's newest Checkpoint. Test evals are budgeted: Baseline and final claim only.
 
 ### monte train
 
 ```bash
-monte train <measurement> [--model M] [--smoke] [--chained] [--yes] [--dry-run] [--json]
+monte train <measurement> [--model M] [--recipe R] [--smoke] [--chained] [--yes] [--dry-run] [--json]
 ```
 
-Trains one chunk, chained from the Lineage's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
+Trains one chunk, chained from the Cohort's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
+
+`--recipe` names the [Recipe](/concepts/runs-ledger#recipes) for this Run, defaulting to the Measurement's. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
+
+Chaining is same-Recipe only: a chunk whose Recipe differs from the Checkpoint it would resume is refused, naming both, because the result would be half one method and half another. Starting a second method deliberately needs an explicit parent, which is not built yet.
 
 ### monte status
 
@@ -45,7 +49,7 @@ Trains one chunk, chained from the Lineage's newest Checkpoint. Refuses without 
 monte status <measurement> [--json]
 ```
 
-Prints the Run rows and the per-Lineage delta lines, paired when possible and labelled unpaired when not. Also prints Cycles with their strike verdicts and the checkpoint ladder.
+Prints the Run rows and the per-Cohort delta lines, paired when possible and labelled unpaired when not. Also prints each Cohort's Lineages — the descent paths, one line each, labelled with the Recipe per hop — its Cycles with their strike verdicts, and the checkpoint ladder. `--json` carries the same paths, with the evals on every hop.
 
 ### monte logs, show, stop
 
@@ -101,9 +105,9 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag or a missing argument |
-| 3 | `E_NO_BASELINE` | train without a matching-Lineage Baseline |
+| 3 | `E_NO_BASELINE` | train without a matching-Cohort Baseline |
 | 4 | `E_FROZEN_FIELD` | a launch would change a frozen Measurement field |
-| 5 | `E_NOT_COMPARABLE` | comparability config does not match the Lineage |
+| 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
 | 6 | `E_PREFLIGHT` | preflight failed: fingerprint drift, disk floor, test budget |
 | 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
 | 8 | `E_MEASUREMENT_EXISTS` | init on a name that exists |
