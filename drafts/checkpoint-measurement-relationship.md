@@ -103,6 +103,37 @@ change. It affects Checkpoint identity and lookup, Run plans, CLI addressing,
 Ledger ownership, Cohort and Lineage reads, and artifact provenance. It should
 be designed separately rather than implied by the diagram.
 
+## Status 2026-08-12: docs applied, code unchanged
+
+The introduction now follows the decision above. Measurement is the
+boundary the loop runs inside, drawn as a container, not a stage the work
+flows through. The spine is the model: base model to Checkpoint. No node
+in the diagram names a Measurement instance.
+
+The platform still makes Measurement the root, and that is not being changed
+for now. Verified in `monte-nemo-platform`:
+
+- `measurement` is the first positional argument on `init`, `eval`, `train`,
+  and `status`.
+- Runs are addressed `<measurement>/<run>` in `logs`, `show`, `stop`, and
+  `promote`.
+- The `MONTE_ROOT` layout is `<measurement>/...` (`core/storage.py`).
+- One lock per Measurement serializes every mutating command.
+- `monte.api` is keyed on it: `status(measurement)`, `runs(measurement)`,
+  `lineages(measurement)`, `runs_by_measurement()`.
+- Nothing sits above it. `grep -ri experiment src/` and `grep -ri suite src/`
+  both return no concept hits, and `CONTEXT.md` reserves Experiment as the
+  only concept that may sit above a Measurement.
+
+So the docs and the code now disagree on purpose. The docs describe the
+intended object model. The CLI surface still reflects the v1 namespace. The
+divergence reaches a reader at exactly one place: every command they type
+names a Measurement. The introduction does not state this, and the
+Quickstart carries it instead, because each of its commands shows the
+argument.
+
+Revisit when the questions below are settled.
+
 ## Platform questions to settle later
 
 1. Give every Checkpoint an identity that can be referenced outside its
@@ -116,3 +147,13 @@ be designed separately rather than implied by the diagram.
    Checkpoint will be evaluated under several Measurements.
 6. Decide whether a later Experiment or Suite groups this work. Experiment is
    reserved and not implemented, so do not use it to patch the current model.
+7. Decide whether one Measurement records several metrics from one rollout
+   pass while exactly one frozen metric decides the Baseline, the delta, the
+   strike, and Checkpoint selection. This would remove most of the reason to
+   run several Measurements over the same Tasks, because the expensive part
+   is the rollout pass and not the grading. Today `grade()` returns a bool
+   and `paired_delta` thresholds one score at `>= 1.0`, so the loop decides
+   on one binary outcome per Task. Choosing which metric to read after the
+   Run would move the comparability boundary from the freeze to read time,
+   which the freeze exists to prevent — so the split must be between one
+   deciding metric and any number of recorded ones.
