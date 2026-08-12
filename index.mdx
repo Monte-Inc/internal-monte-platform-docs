@@ -1,14 +1,15 @@
 ---
 title: "Introduction"
+description: "What Monte records and how training becomes comparable evidence"
 ---
 
-AI agents can handle individual tasks in LLM post-training research. They can change a training recipe, launch an experiment, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
+AI agents can handle individual tasks in LLM post-training research. They can change a Recipe, launch a Run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
 
 An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on one result or metric while losing sight of the wider direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
 
-Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to manage several lines of work, revisit decisions, and choose what to try next.
+Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to revisit decisions and choose what to try next.
 
-Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method, framework, and research strategy.
+Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method and research strategy.
 
 <Note>
 Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
@@ -16,26 +17,43 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-An Environment supplies the tasks and the grader. It defines what counts as a correct answer. A Measurement freezes how you use those tasks: which ones, and under which eval settings. The freeze keeps a score taken today comparable to one taken in six months.
+An Environment supplies graded Tasks and a grader. A Measurement freezes how you evaluate those Tasks: the exact Splits, eval settings, and Environment fingerprint. A Measurement is a contract. It does not execute work.
 
-Inside a Measurement, the Runs that share a base model form a Cohort. Each Cohort holds one Baseline, and a delta never crosses from one Cohort into another. Each training or evaluation is a Run, and it records its model, configuration, results, artifacts, cost, and provenance.
+Runs do the work. A Baseline eval Run applies the Measurement to a base model. A training Run follows a Recipe and produces a Checkpoint. A follow-up eval Run applies the same Measurement to that Checkpoint. Monte then compares the two eval Runs Task by Task and reports the paired delta.
 
 ```mermaid actions={false}
 flowchart TD
-    ENV["Environment<br/>tasks and grader"]
-    M["Measurement<br/>frozen: which tasks, which eval settings"]
-    C["Cohort<br/>one base model, one Baseline"]
-    T["Training Run<br/>produces a Checkpoint"]
-    V["Evaluation Run<br/>scores a Checkpoint"]
+    ENV["Environment<br/>graded Tasks and grader"]
+    M["Measurement<br/>frozen evaluation contract"]
+    BASE["Base model"]
+    RECIPE["Recipe<br/>how to train"]
+    B["Baseline eval Run<br/>scores the base model"]
+    T["Training Run"]
+    CP["Checkpoint"]
+    E["Follow-up eval Run<br/>scores the Checkpoint"]
+    D["Paired delta<br/>against the Baseline"]
+    L["Ledger<br/>records every Run"]
 
     ENV -->|"supplies"| M
-    M -->|"groups its Runs into"| C
-    C --> T
-    C --> V
-    T -->|"Checkpoint"| V
+    BASE --> B
+    M -->|"applied by"| B
+    BASE --> T
+    RECIPE --> T
+    M -. "train Split and grader" .-> T
+    T -->|"produces"| CP
+    CP --> E
+    M -->|"applied by"| E
+    B --> D
+    E --> D
+    D -. "choose the next step" .-> T
+    B --> L
+    T --> L
+    E --> L
 ```
 
-More than one Measurement can use the same Environment — the same tasks, frozen under different eval settings. Today a Checkpoint stays inside the Measurement whose training Run produced it.
+Inside a Measurement, Monte derives a Cohort from the base model and comparability settings. A Cohort answers **what can you compare?** It has one Baseline, and a delta never crosses its boundary. Monte also derives each Checkpoint's Lineage from its parent links. A Lineage answers **what came from what?**
+
+One Environment can support several Measurements. Each Measurement freezes an independent evaluation contract and owns its own Ledger. Today, a Checkpoint stays inside the Measurement whose training Run produced it. You cannot yet evaluate one produced Checkpoint under several Measurements.
 
 ## Start here
 
