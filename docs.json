@@ -23,6 +23,7 @@
         "pages": [
           "concepts/environments",
           "concepts/measurement",
+          "concepts/evaluation",
           "concepts/loop",
           "concepts/runs-ledger"
         ]

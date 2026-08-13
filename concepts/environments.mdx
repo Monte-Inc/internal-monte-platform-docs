@@ -6,7 +6,7 @@ An Environment is the world an agent acts on. The agent takes an action, the Env
 
 Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two things that make agent-assisted training possible:
 
-- **Split roles.** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report. `test` is held back for that.
+- **Split roles.** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report, and `test` is held back for that.
 - **A fingerprint.** The task files, the grader, the prompt, and the harness version each move a score without looking like a change to the measurement. The fingerprint hashes all of them, and refuses a Run when one of them moves.
 
 ## Parts of an Environment
@@ -15,13 +15,13 @@ An Environment has three parts, and the agent harness sits beside them.
 
 **Dataset.** The tasks, plus the data needed to score each attempt. One task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a task into a model call belongs here too.
 
-**Verifier.** The grader. It scores one attempt into a reward, usually between 0 and 1. It checks the output against the task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment. The same verifier serves two jobs. Its scores become the eval metric, and they become the training reward.
+**Verifier.** The grader. It scores one attempt into a reward, usually between 0 and 1, by checking the output against the task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment, and it serves two jobs at once, because its scores become both the eval metric and the training reward.
 
 **Tools and state.** The per-task world that the agent changes as it acts. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
 
-**Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference. The harness makes it an agent: it loops model calls, routes tool use, manages context, and decides when a task is done. A simple harness only loops until the task completes. Others add planning, memory, and skills. The model binds per Run.
+**Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a task is done. A simple harness only loops until the task completes, while others add planning, memory, and skills. The model binds per Run.
 
-Every Environment must have a grader. Ungraded data is never an input to Monte. One Environment can serve several Measurements: the same tasks, frozen under different settings.
+Every Environment must have a grader, and ungraded data is never an input to Monte. One Environment can serve several Measurements: the same tasks, frozen under different settings.
 
 You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
 
@@ -35,7 +35,7 @@ A rollout runs across three servers: one for the model, one for the agent harnes
 4. The grader returns a reward and the answer that it extracted.
 5. Monte records one Trace for each Task, then writes the score to the Ledger.
 
-A training Run uses the same grader. Eval and training each run their own copy of it, and preflight proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
+A training Run uses the same grader, and although eval and training each run their own copy of it, preflight proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
 
 ## Related pages
 
@@ -47,3 +47,7 @@ A training Run uses the same grader. Eval and training each run their own copy o
     What the freeze covers: the Split roles and the fingerprint.
   </Card>
 </CardGroup>
+
+## Further reading
+
+- [Environments](https://docs.nvidia.com/nemo/gym/about/concepts/environments/) (NeMo Gym)
