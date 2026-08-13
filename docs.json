@@ -21,9 +21,9 @@
       {
         "group": "Concepts",
         "pages": [
-          "concepts/loop",
+          "concepts/environments",
           "concepts/measurement",
-          "concepts/environment",
+          "concepts/loop",
           "concepts/runs-ledger"
         ]
       },
@@ -45,6 +45,12 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/concepts/environment",
+      "destination": "/concepts/environments"
+    }
+  ],
   "logo": {
     "light": "/logo/light.png",
     "dark": "/logo/dark.png"
