@@ -17,19 +17,24 @@ Monte is in closed beta. Interfaces and these docs change quickly, and commands 
 
 ## How it works
 
-An Environment gives you graded Tasks and a grader. `monte init` creates a Measurement over one Environment. The Measurement fixes which Tasks you score and how you score them. It holds no model. Each Run names its own model.
+Monte is an abstraction layer over the training lifecycle. It holds what each training Run did, what each eval scored, and how a model does on one task.
 
-Then you work the loop. First, score the base model to get the Baseline. Next, train one chunk and score the Checkpoint it produces. Compare that score with the Baseline. Repeat until you stop. Monte never stops the loop for you.
+An Environment is the standard object that carries what you need to score that task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte init` creates a Measurement and fixes which Tasks you score and how you score them.
+
+A Measurement starts from a base model, and that can be any model you want to start from. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it spreads over GPUs. Each Run records the Recipe it ran, so the method behind a number is never lost. Monte writes the run plan, the events, and the training logs in one standard format. You can see from them which settings to change next.
+
+Everything in the box below happens under one Measurement.
 
 ```mermaid actions={false}
+%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 12}, 'rankSpacing': 55, 'nodeSpacing': 45}}}%%
 flowchart TD
     ENV["Environment"]
 
-    subgraph M["Measurement"]
+    subgraph M[" "]
         BM["Base model"]
         BASE["Baseline"]
         CP["Checkpoint"]
-        SCORE["Change from the Baseline"]
+        SCORE["Checkpoint score"]
         FINAL["Final score on test"]
 
         BM -->|"monte eval"| BASE
@@ -39,10 +44,12 @@ flowchart TD
         SCORE -->|"monte eval --split test"| FINAL
     end
 
-    ENV -->|"monte init"| M
+    ENV -->|"monte init"| BM
     FINAL -->|"monte promote"| PROM(["Promoted weights"])
     FINAL -->|"no improvement"| NONE(["Nothing promoted"])
 ```
+
+The final eval on the test Split decides whether you can promote the model. Every Run, score, and cost lands in that same standard format. An agent reads that record, runs the loop, and decides what to try next.
 
 ## Start here
 
