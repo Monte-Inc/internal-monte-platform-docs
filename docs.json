@@ -24,6 +24,7 @@
           "concepts/environments",
           "concepts/measurement",
           "concepts/evaluation",
+          "concepts/training",
           "concepts/loop",
           "concepts/runs-ledger"
         ]
