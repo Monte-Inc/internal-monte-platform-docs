@@ -1,44 +1,55 @@
 ---
 title: "Measurement"
-description: "A frozen evaluation contract over one Environment"
 ---
 
-A Measurement is a frozen evaluation contract over exactly one [Environment](/concepts/environment). It fixes what you measure and how you measure it. More than one Measurement can use the same Environment — the same tasks, frozen under different eval settings.
+A Measurement is a fixed standard for scoring a model. Two Runs under the same Measurement answered the same tasks under the same rules, so you can compare them directly.
 
-## Definition
+A Measurement is built on one [Environment](/concepts/environments), and it fixes which of that Environment's tasks run, the sampling rules, and what counts as correct.
 
-The Environment supplies the graded tasks. The Measurement freezes how evaluation uses them: which tasks, with which eval settings, against which grader.
+## Why a Measurement exists
 
-A Measurement holds no model or training configuration. Each Run binds its model and exact inputs. A training Run records its training data and the [Recipe](/concepts/runs-ledger#recipes) it ran — the file stating the method, hashed into the Run's plan. Runs under the same Measurement can compare different approaches under the same evaluation contract.
+Evaluation has many variables you can set. You can give each task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
-## What gets frozen
+Each of those returns a different number for the same model, and none of them is wrong. They answer different questions about how well the model does the task.
 
-`monte init` freezes three things:
+A Measurement holds those variables constant, so within one Measurement the model is the only thing that changed between two Runs. You can define as many Measurements as you want.
 
-1. **Evaluation Splits**: the task partitions used for evaluation, with each file's path, sha256, and task count pinned in `measurement.json`.
-2. **Eval settings**: the sampling and grading settings that every eval Run uses.
-3. **Fingerprint**: a content hash of the task source, the grader, and the harness config.
+When the variables go unrecorded, old results stop being usable. You cannot tell why two numbers differ, so you cannot compare the experiments that produced them.
 
-The freeze is what makes scores comparable. Two Runs under one Measurement answer the same tasks under the same rules. A changed fingerprint is a different Measurement, not a new version of the same one.
+## What a Measurement fixes
 
-<Note>
-Monte recomputes the fingerprint before each Run. If the Environment changed since `monte init`, Monte refuses the Run.
-</Note>
+A Measurement fixes three things when you create it.
 
-## Lifecycle
+1. **The tasks.** Which tasks run, as an exact list. Not a count and not a name, but those specific tasks.
+2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each task gets.
+3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-`monte init <measurement> --env <name>` creates the Measurement. Every later command names it, as in `monte eval math` or `monte status math`. Each eval or train Run appends one row to the Measurement's [Ledger](/concepts/runs-ledger). A [Cohort](/concepts/runs-ledger#cohorts) and its Baseline belong to one Measurement and never cross it.
+A Measurement fixes the evaluation only, not the training method. The [Recipe](/concepts/training#recipes) stays free, because that is what the agent changes between Runs.
+
+A Measurement names no model either: each Run binds its own, so many models can compete under one Measurement.
+
+Monte checks the frozen material before every Run. If any of it changed, that is a different Measurement, and Monte refuses to score the new Run against the old ones.
+
+## The Splits
+
+A Measurement owns its three Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place.
+
+- **`train`.** What the model learns on.
+- **`dev`.** What the agent reads to choose its next move.
+- **`test`.** Held back for the Baseline and the final claim.
+
+The agent picks each next move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely: Monte reads it twice, once at the Baseline and once for the final claim, and refuses a third. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related pages
 
 <CardGroup cols={3}>
-  <Card title="Environment" href="/concepts/environment">
-    The graded task package a Measurement freezes.
+  <Card title="Environments" href="/concepts/environments">
+    The graded world a Measurement freezes.
   </Card>
-  <Card title="The loop" href="/concepts/loop">
+  <Card title="Improvement" href="/concepts/improvement">
     How Splits, Baselines, and deltas judge improvement.
   </Card>
-  <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">
+  <Card title="Glossary" href="/concepts/glossary">
     The record every Run writes to.
   </Card>
 </CardGroup>

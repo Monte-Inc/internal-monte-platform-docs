@@ -1,0 +1,54 @@
+---
+title: "Training"
+---
+
+Training is how you change the model itself. A better prompt, a new tool, or a stronger harness can all raise how well a model does your work, but each of them leaves the model untouched. Training moves the weights, so what the model learns goes with it wherever it runs.
+
+The part of that work covered here is post-training. It starts from a base model that is already generally capable, which is what pretraining produces. Pretraining is the separate process that turns random weights into a working language model, and it is out of scope for this page. Post-training takes the finished base model and specializes it for a particular task and a particular set of tools.
+
+There are many methods for doing that, and all of them rely on some signal telling the model what a good output looks like. What separates them is where that signal comes from. Supervised fine-tuning takes it from examples that someone already wrote. Reinforcement learning takes it from a grader that scores the model's own attempts. Distillation takes it from a larger model that already does the task well. The sections below introduce each of them at a high level, which is enough to tell the methods apart and to see where each one fits. Every one of them has considerably more depth than this page covers.
+
+## Supervised fine-tuning
+
+Supervised fine-tuning trains the model on examples of the work already done correctly. Each example pairs an input with the response you want back, and the model learns to reproduce that response. This is the most direct way to teach a format, a house style, or a tool-calling convention, because you are showing the model the exact output you expect. It also means the demonstrations have to exist before you can start.
+
+Two limits are worth knowing before you choose it. The first is that the model learns to reproduce answers rather than the reasoning that produced them, so it tends to [memorize the training set rather than generalize past it](https://arxiv.org/abs/2501.17161). The second is [distribution shift](https://arxiv.org/abs/1011.0686). The model only ever trains on inputs that follow from a correct demonstration. Its first mistake therefore puts it in a situation the training never covered, and later mistakes compound from there.
+
+## Reinforcement learning
+
+Reinforcement learning replaces the demonstration with a goal and a way to check whether the model reached it. The model produces its own attempts, a grader scores them, and the scores push the weights toward whatever scored well. Nobody has to write the right answer down first.
+
+This works best where correctness can be checked rather than judged. A math answer either matches or it does not, a test suite either passes or it fails, and generated code either runs or it errors. Training against checks of that kind is called [reinforcement learning with verifiable rewards](https://arxiv.org/abs/2411.15124), and it is what produced the reasoning behavior in models such as [DeepSeek-R1](https://arxiv.org/abs/2501.12948).
+
+Because the model learns from attempts it generated itself, it trains on its own mistakes, which is exactly the case supervised fine-tuning never sees. The cost is generation. Every training step needs a fresh batch of attempts produced and scored before the weights can move, which makes an RL run heavier than fitting a fixed set of examples.
+
+## Distillation
+
+Distillation trains a smaller model to reproduce the behavior of a larger one that already does the task well. The larger model is the teacher, the smaller one is the student, and the signal comes from the teacher's own outputs. You need neither written demonstrations nor a grader, only a teacher worth copying and prompts to run it on.
+
+The straightforward version trains the student on text the teacher generated, which is supervised fine-tuning with a model supplying the examples. It inherits the same distribution shift, because the student still only ever sees the teacher's trajectories. [On-policy distillation](https://arxiv.org/abs/2306.13649) avoids that by having the student generate the attempts and the teacher score them, so the feedback lands on the states the student actually reaches.
+
+The teacher can also give feedback on every token, whereas a grader returns one number for a finished attempt. That denser signal is why on-policy distillation can reach a similar result for [less compute than reinforcement learning](https://thinkingmachines.ai/blog/on-policy-distillation/).
+
+## Recipes
+
+Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of Recipes that produced it.
+
+## Related pages
+
+<CardGroup cols={3}>
+  <Card title="Environments" href="/concepts/environments">
+    Where the reward comes from during training.
+  </Card>
+  <Card title="Measurement" href="/concepts/measurement">
+    The settings a Recipe inherits its defaults from.
+  </Card>
+  <Card title="Improvement" href="/concepts/improvement">
+    What a trained Checkpoint is used for next.
+  </Card>
+</CardGroup>
+
+## Further reading
+
+- [Training](https://docs.nvidia.com/nemo/gym/about/concepts/training/) (NeMo Gym)
+- [Features and Roadmap](https://docs.nvidia.com/nemo/rl/latest/about/features.html) (NVIDIA NeMo-RL)

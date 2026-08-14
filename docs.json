@@ -16,35 +16,63 @@
     "groups": [
       {
         "group": "Getting started",
-        "pages": ["index", "quickstart", "real-box"]
+        "pages": [
+          "index",
+          "quickstart",
+          "real-box"
+        ]
       },
       {
         "group": "Concepts",
         "pages": [
-          "concepts/loop",
+          "concepts/environments",
           "concepts/measurement",
-          "concepts/environment",
-          "concepts/runs-ledger"
+          "concepts/evaluation",
+          "concepts/training",
+          "concepts/improvement",
+          "concepts/glossary"
         ]
       },
       {
         "group": "CLI reference",
-        "pages": ["cli/overview"]
+        "pages": [
+          "cli/overview"
+        ]
       },
       {
         "group": "Environments",
-        "pages": ["environments/authoring"]
+        "pages": [
+          "environments/authoring"
+        ]
       },
       {
         "group": "Console",
-        "pages": ["console/overview"]
+        "pages": [
+          "console/overview"
+        ]
       },
       {
         "group": "Help",
-        "pages": ["troubleshooting"]
+        "pages": [
+          "troubleshooting"
+        ]
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/concepts/environment",
+      "destination": "/concepts/environments"
+    },
+    {
+      "source": "/concepts/loop",
+      "destination": "/concepts/improvement"
+    },
+    {
+      "source": "/concepts/runs-ledger",
+      "destination": "/concepts/glossary"
+    }
+  ],
   "logo": {
     "light": "/logo/light.png",
     "dark": "/logo/dark.png"
@@ -58,7 +86,16 @@
     ]
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp", "cursor", "vscode"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
