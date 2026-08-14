@@ -27,6 +27,14 @@ Mock against real is stack detection: a Run is real when the serving or containe
 
 The frozen data on the box drifted or is incomplete. Re-seed the durable data root from the verified copy. Never re-derive Splits on a box.
 
+### E_REMOTE: the tree is dirty or unpushed
+
+`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as a cold box asked for a real one.
+
+### E_BOX or E_STORAGE: no credentials
+
+Both name the variable they wanted. `box` and `--remote` need a Lambda key, `sync` and `push` need a GCS key, and a real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+
 ### Training preflight refuses: disk
 
 The refusal names the floor and which filesystem is short, home or the data root. Free disk there and run again.

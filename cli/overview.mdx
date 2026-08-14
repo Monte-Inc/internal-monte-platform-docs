@@ -7,11 +7,24 @@ The `monte` CLI is the only write path into the platform. This page states the c
 
 ## Conventions
 
-- **Default subverb.** `monte eval math` means `monte eval run math`. Same for `train`. The `env` group has no default on purpose: list and install are different intents.
+- **Default subverb.** `monte eval math` means `monte eval run math`. Same for `train`. Options may precede the name: `monte eval --smoke math` works. The `env` and `box` groups have no default on purpose: their subcommands are different intents.
 - **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object persisted as `plan.json` and hashed into the row's provenance.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `env list`, and `config` only. Stdout carries pure JSON: the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `env list`, `config`, `sync`, `push`, and every `box` subcommand. Stdout carries pure JSON: the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
 - **Refusals.** Anything the platform declines exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
+- **`--version`.** `monte --version` prints the installed version and exits.
+
+## Where a command runs
+
+Three groups, and mixing them up is the most common source of a refusal.
+
+| Group | Runs from | Commands |
+| --- | --- | --- |
+| Anywhere | a tool install or a checkout | `init`, `status`, `logs`, `show`, `env`, `config`, `sync` |
+| Laptop, checkout only | a clean git checkout pushed to origin | `--remote` on `eval` and `train`, `box` |
+| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote` |
+
+`--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
 
 ## Commands
 
@@ -26,20 +39,26 @@ Creates the Measurement: freezes the Splits, the eval settings, and the Environm
 ### monte eval
 
 ```bash
-monte eval <measurement> [--model M] [--split dev|test] [--step N] [--smoke] [--yes] [--dry-run] [--json]
+monte eval <measurement> [--model M] [--split dev|test] [--step N] [--smoke]
+                         [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
 Scores a model on a Split and appends the row. The default Split is dev. The default step is the Cohort's newest Checkpoint. Test evals are budgeted: Baseline and final claim only.
 
+`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the durable tier after each transition, and is what the box job itself runs with. See [Remote runs](#remote-runs).
+
 ### monte train
 
 ```bash
-monte train <measurement> [--model M] [--recipe R] [--smoke] [--chained] [--yes] [--dry-run] [--json]
+monte train <measurement> [--model M] [--recipe R] [--smoke] [--chained]
+                          [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
 Trains one chunk, chained from the Cohort's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
 
-`--recipe` names the [Recipe](/concepts/training#recipes) for this Run, defaulting to the Measurement's. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
+`--recipe` names the [Recipe](/concepts/training#recipes) for this Run, defaulting to the Measurement's. Pass a name from `monte config` or a path to a `.yaml`. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
+
+`--remote` and `--push` work as they do on `eval`, with one addition: a real chunk's Checkpoints go to Hugging Face at the end of a `--push` run, so a real `--remote` train needs a Hugging Face token. `--remote` cannot carry a Recipe by path, only by name, because the box resolves it from its own search path.
 
 Chaining is same-Recipe only: a chunk whose Recipe differs from the Checkpoint it would resume is refused, naming both, because the result would be half one method and half another. Starting a second method deliberately needs an explicit parent, which is not built yet.
 
@@ -79,24 +98,98 @@ monte env install --all
 
 `list` shows each Environment and its Gym benchmarks. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
 
+### monte sync, push
+
+```bash
+monte sync [measurement...] [--bucket B] [--key-file PATH] [--json]
+monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
+```
+
+The two directions of the durable tier, a results bucket that outlives any box.
+
+`sync` pulls the bucket into a local Mirror, defaulting to every Measurement in it. The Mirror is a read-only view: the durable copy wins on disagreement, local-only files are never deleted, and weight objects are skipped because weights live on Hugging Face.
+
+`push` uploads one Measurement's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Measurement's own files. Nothing remote is ever deleted, so retention stays a separate deliberate act. Weight files are refused passage.
+
+Both resolve a GCS service-account key: `--key-file`, then `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names, fetched in memory. Without one, `E_STORAGE`.
+
+### monte box
+
+```bash
+monte box up [--type T] [--region R] [--cold] [--ssh-key K] [--json]
+monte box status [--json]
+monte box down <instance-id|name> [--json]
+```
+
+Ephemeral Lambda GPU boxes, managed from your laptop.
+
+`up` shops for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, writes the identity file, and arms a watchdog: a systemd timer that terminates the box through the Lambda API once it goes idle past its budget or over its hard TTL. Every box is born able to kill itself. `--cold` launches without the NFS data root, which means the box cannot serve a real Run.
+
+`status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag; anything else is listed read-only as foreign.
+
+`down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. Foreign instances are refused.
+
+All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
+
 ### monte config
 
 ```bash
 monte config [--json]
 ```
 
-Prints the resolved configuration: the data root and its source, the GPU check command, mock seconds, the base-model pin, the installed Environments, and the schema version.
+Prints the resolved configuration: the data root and its source, the GPU check command, mock seconds, the base-model pin, the installed Environments, the resolvable Recipe names with their search path, and the schema version.
+
+## Remote runs
+
+`monte eval --remote` and `monte train --remote` move one Run onto an ephemeral box and return. The flow is fixed:
+
+1. **The reproducibility gate.** Your working tree must be clean and `HEAD` must be contained in origin. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
+2. **A box.** An active box is reused when it fits; otherwise one is launched and armed. A real Run needs a warm box, because that is where the data root lives.
+3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
+4. **The credentials.** Planted under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
+5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
+6. **The job.** Launched detached in a tmux session. It pushes results at each transition and the box terminates itself when the job ends.
+
+The Measurement must already exist locally, so a typo refuses on your laptop instead of dying in a detached session an hour of billing later. `--remote` refuses alongside `--push` (the box job already runs with it) and alongside `--dry-run` (submitting launches real compute, which is the opposite of dry).
+
+Watch a submitted Run with `monte sync <measurement>` and then `monte status <measurement>`, which is never more than one transition behind live.
 
 ## Environment variables
+
+Paths and execution:
 
 | Variable | Meaning | Default |
 |---|---|---|
 | `MONTE_ROOT` | durable data root: Measurements, Ledger, Splits | `~/monte-post-training/monte-platform` |
 | `MONTE_LOCAL` | disposable box-local root: venvs, caches, scratch | `~/monte` |
+| `MONTE_RECIPES` | a directory of Recipes, searched before the packaged ones | unset |
 | `MONTE_GPU_CHECK_CMD` | command for the foreign-process GPU check in a real preflight. Empty disables that check | auto |
 | `MONTE_MOCK_SECONDS` | duration of a mock run, in seconds | `30` |
 | `MONTE_GPU_MEM_UTIL` | fraction of GPU memory the eval server can claim | `0.9` |
 | `MONTE_DOCKER` | docker command override, for example `sudo docker` | `docker` |
+
+Credentials. Each one resolves from a direct value first, then from 1Password, which is fetched in memory so nothing lands on disk:
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `MONTE_LAMBDA_KEY` | Lambda API key for `box` and `--remote` | unset |
+| `MONTE_LAMBDA_KEY_OP` | 1Password item holding it instead | unset |
+| `MONTE_GCS_KEY_FILE` | GCS service-account JSON path for `sync` and `push` | unset |
+| `MONTE_GCS_KEY_OP` | 1Password document holding it instead | unset |
+| `MONTE_GCS_BOX_KEY_FILE` | the key planted on a box, when it differs from yours | unset |
+| `MONTE_GCS_BOX_KEY_OP` | 1Password document holding that one | unset |
+| `HF_TOKEN` | Hugging Face token: a real train pushes Checkpoints there | unset |
+| `MONTE_HF_TOKEN_OP` | 1Password item holding it instead | unset |
+| `MONTE_HF_ORG` | Hugging Face org the weights repos live under | `monte-inc` |
+| `MONTE_OP_ACCOUNT` | 1Password account for every `op` lookup above | unset |
+| `MONTE_OP_VAULT` | 1Password vault for every `op` lookup above | unset |
+
+Box provisioning:
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `MONTE_SSH_KEY_NAME` | account SSH key name, needed when the account has several | unset |
+| `MONTE_NFS_NAME` | the NFS a warm box attaches | `monte-post-training` |
 
 ## Exit codes
 
@@ -116,3 +209,6 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 | 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent |
 | 12 | `E_SERVING` | the eval serving stack failed |
 | 13 | `E_VERIFICATION` | a promote checksum or load verification failed |
+| 14 | `E_STORAGE` | the durable tier is unreachable: credentials, package, or path |
+| 15 | `E_BOX` | a box could not be provided or operated on: credentials, capacity, the Lambda API refusing, or a foreign instance |
+| 16 | `E_REMOTE` | a remote submission could not be made: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |

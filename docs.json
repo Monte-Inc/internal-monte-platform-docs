@@ -18,8 +18,7 @@
         "group": "Getting started",
         "pages": [
           "index",
-          "quickstart",
-          "real-box"
+          "quickstart"
         ]
       },
       {
@@ -63,6 +62,10 @@
     {
       "source": "/concepts/environment",
       "destination": "/concepts/environments"
+    },
+    {
+      "source": "/real-box",
+      "destination": "/quickstart"
     },
     {
       "source": "/concepts/loop",
