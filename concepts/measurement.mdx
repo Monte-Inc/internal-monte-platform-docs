@@ -24,7 +24,7 @@ A Measurement fixes three things when you create it.
 2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each task gets.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-A Measurement fixes the evaluation only, not the training method. The [Recipe](/concepts/runs-ledger#recipes), the hyperparameters, and the training data all stay free, because those are what the agent changes between Runs.
+A Measurement fixes the evaluation only, not the training method. The [Recipe](/concepts/training#recipes), the hyperparameters, and the training data all stay free, because those are what the agent changes between Runs.
 
 A Measurement names no model either: each Run binds its own, so many models can compete under one Measurement.
 
@@ -49,7 +49,7 @@ The agent picks each next move from what `dev` shows, so the loop fits itself to
   <Card title="Improvement" href="/concepts/improvement">
     How Splits, Baselines, and deltas judge improvement.
   </Card>
-  <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">
+  <Card title="Glossary" href="/concepts/glossary">
     The record every Run writes to.
   </Card>
 </CardGroup>

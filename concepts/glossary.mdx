@@ -1,0 +1,74 @@
+---
+title: "Glossary"
+---
+
+Everything Monte does is recorded as a Run, and every Run is one row in its Measurement's Ledger. The Ledger only ever grows. Rows are never rewritten, each Run writes its own file, and every row carries the hashes needed to trace a score back to the exact inputs that produced it.
+
+The groupings you read are not stored. A Cohort and a Lineage are both derived from row fields when you ask for them, so neither can fall out of agreement with the record it came from.
+
+## The task world
+
+| Term | Meaning |
+| --- | --- |
+| **Environment** | The graded world an agent acts on: the tasks, the grader, and any tools and per-task state. See [Environments](/concepts/environments). |
+| **Task** | One problem for the model, plus the data needed to score an attempt at it. |
+| **Rollout** | One attempt at one Task, from prompt through to a graded reward. |
+| **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
+| **Split** | A frozen list of Task IDs. Every Measurement owns three: `train`, `dev`, and `test`. |
+
+## What gets frozen
+
+| Term | Meaning |
+| --- | --- |
+| **Measurement** | A frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. See [Measurement](/concepts/measurement). |
+| **Fingerprint** | A hash over the Task files, the grader, the prompt, and the harness. A Run is refused when any of them has moved. |
+| **Baseline** | The base model's score before any training, written as `eval@0`. Every later score in the same Cohort is read against it. |
+
+## What runs
+
+| Term | Meaning |
+| --- | --- |
+| **Run** | One execution recorded as a row. Either a training Run, which produces a Checkpoint, or an eval Run, which scores one. |
+| **`train@N` / `eval@N`** | N is the Checkpoint's absolute step count, never a run index. The training Run ending at step 50 is `train@50`, and `eval@50` scores what it produced. |
+| **Checkpoint** | The model's saved state at one step. |
+| **Servable folder** | The weights and tokenizer directory an inference server can load, in Hugging Face layout. |
+| **Load-check** | One prompt pushed through a real serving stack to prove a servable folder actually serves. It is not a score and not a Run. |
+| **Recipe** | The named file stating how a training Run trains: model shape, algorithm, batch geometry, optimizer. See [Training](/concepts/training#recipes). |
+| **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
+
+## What is derived
+
+| Term | Meaning |
+| --- | --- |
+| **Cohort** | The Runs sharing a base model and comparability config: the set within which a number means something. Each one needs its own Baseline, and a delta never crosses from one Cohort into another. |
+| **Lineage** | A Checkpoint's descent path back to the base model, with every hop labelled by the Recipe that produced it. Checkpoints form a tree, so one Cohort can hold several Lineages. See [Improvement](/concepts/improvement). |
+| **The claim** | The `test` score of the Checkpoint the tool selected. `test` is read exactly twice per Cohort, at the Baseline and here. |
+| **Promoting** | Exporting a claimed Checkpoint's servable folder as a checksum-verified copy, behind a confirmation you type out in full. |
+
+## The record
+
+| Term | Meaning |
+| --- | --- |
+| **Ledger** | The append-only, per-Measurement record of Runs: what happened, in what order, with what score. Every surface reads it through one API rather than touching the files. |
+| **Trace** | One Run's attempt at one Task: the rollout verbatim, plus the grader's own fields. |
+| **Provenance** | The hashes carried on every row, covering the code, the configuration, the Splits, the comparability config, and the container image. |
+
+<Note>
+  Before 2026-08-11, "Lineage" was Monte's word for what is now called a Cohort. It now means what it means elsewhere in ML, where a tuned model is itself a valid starting point.
+</Note>
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Improvement" href="/concepts/improvement">
+    What the rows mean once they exist.
+  </Card>
+  <Card title="CLI reference" href="/cli/overview">
+    The commands that write and read them.
+  </Card>
+</CardGroup>
+
+## Further reading
+
+- [Key Terminology](https://docs.nvidia.com/nemo/gym/about/concepts/key-terminology/) (NeMo Gym)
+- [NeMo RL Documentation](https://docs.nvidia.com/nemo/rl/latest/index.html) (NVIDIA)

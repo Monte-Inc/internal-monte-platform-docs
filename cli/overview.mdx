@@ -39,7 +39,7 @@ monte train <measurement> [--model M] [--recipe R] [--smoke] [--chained] [--yes]
 
 Trains one chunk, chained from the Cohort's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
 
-`--recipe` names the [Recipe](/concepts/runs-ledger#recipes) for this Run, defaulting to the Measurement's. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
+`--recipe` names the [Recipe](/concepts/training#recipes) for this Run, defaulting to the Measurement's. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
 
 Chaining is same-Recipe only: a chunk whose Recipe differs from the Checkpoint it would resume is refused, naming both, because the result would be half one method and half another. Starting a second method deliberately needs an explicit parent, which is not built yet.
 

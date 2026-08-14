@@ -30,7 +30,7 @@ The Recipe does not change while this runs. Every choice about the method is set
 
 ## Moving the method
 
-The Checkpoint is then scored on the `dev` Split, and the result is written to the [Ledger](/concepts/runs-ledger). The Ledger holds the Baseline and every Run since, so it is where you find out what a given Recipe did and how that compared to what came before.
+The Checkpoint is then scored on the `dev` Split, and the result is written to the [Ledger](/concepts/glossary). The Ledger holds the Baseline and every Run since, so it is where you find out what a given Recipe did and how that compared to what came before.
 
 The agent reads that record and decides the next move, which is the part usually called the outer loop. A move is two choices made together: which Checkpoint to start from, and which Recipe to run on it. Those two choices are the arrow back into training, and running it produces one more Checkpoint. Nothing is replaced, so the record only ever grows.
 
@@ -64,6 +64,16 @@ The first arrow is a fine-tuning stage, the second is the boundary where the met
 
 All three are the same operation underneath: pick a Checkpoint, pick a Recipe. Because a Checkpoint can have more than one child, what builds up is a tree, and one pass through the figure at the top of this page is a single path down it.
 
+## Making the claim
+
+The search runs until the model reaches the result you were after, or until the budget you set aside runs out. Monte does not make that call. Nothing exits the search automatically, and no rule decides that you have run enough.
+
+The choice of which Checkpoint to claim is not yours, though. The tool selects the one that scored highest on `dev`. That keeps the last decision consistent with every earlier one, all of which were also made by reading `dev`.
+
+That Checkpoint is then scored on `test`, and the result is the claim. It is the first read of `test` since the Baseline, and the last one Monte will allow. The rule is two per Cohort: a third is refused, and so is a claim at any step the tool did not select. Dev selects, test confirms.
+
+If the claim shows an improvement, the Checkpoint can be promoted. Promoting exports its servable folder as a checksum-verified copy, behind a confirmation you have to type out in full. If the claim shows no improvement, nothing is promoted and the Ledger keeps the record exactly as it stands. The tree still shows every method that was tried and what each one scored, so the work has an answer either way.
+
 ## Related pages
 
 <CardGroup cols={3}>
@@ -73,7 +83,7 @@ All three are the same operation underneath: pick a Checkpoint, pick a Recipe. B
   <Card title="Measurement" href="/concepts/measurement">
     What stays fixed across every Run.
   </Card>
-  <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">
+  <Card title="Glossary" href="/concepts/glossary">
     How the record is kept and read back.
   </Card>
 </CardGroup>
