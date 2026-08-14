@@ -25,7 +25,7 @@
           "concepts/measurement",
           "concepts/evaluation",
           "concepts/training",
-          "concepts/loop",
+          "concepts/improvement",
           "concepts/runs-ledger"
         ]
       },
@@ -51,6 +51,10 @@
     {
       "source": "/concepts/environment",
       "destination": "/concepts/environments"
+    },
+    {
+      "source": "/concepts/loop",
+      "destination": "/concepts/improvement"
     }
   ],
   "logo": {

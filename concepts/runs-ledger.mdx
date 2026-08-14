@@ -13,7 +13,7 @@ Address a Run as `<measurement>/<run>` anywhere the CLI takes one (`logs`, `show
 
 ## Checkpoints
 
-A Checkpoint is the model's saved state at one step. Two shapes matter. The full resume set (weights, optimizer, and dataloader state) continues training. The servable folder (an HF-layout weights and tokenizer directory) is what an inference server loads. A load-check proves a servable folder actually serves: one prompt through a real serving stack. It is not a score and not a Run. The final claim's Checkpoint selection is loop discipline: see [The loop](/concepts/loop).
+A Checkpoint is the model's saved state at one step. Two shapes matter. The full resume set (weights, optimizer, and dataloader state) continues training. The servable folder (an HF-layout weights and tokenizer directory) is what an inference server loads. A load-check proves a servable folder actually serves: one prompt through a real serving stack. It is not a score and not a Run. The final claim's Checkpoint selection is loop discipline: see [Improvement](/concepts/improvement).
 
 ## Cohorts
 
@@ -60,7 +60,7 @@ Each run directory on the durable tier holds the launched plan (`plan.json`), th
 ## Related pages
 
 <CardGroup cols={2}>
-  <Card title="The loop" href="/concepts/loop">
+  <Card title="Improvement" href="/concepts/improvement">
     What the rows mean: baselines, deltas, and the final claim.
   </Card>
   <Card title="CLI reference" href="/cli/overview">

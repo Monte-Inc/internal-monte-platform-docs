@@ -38,7 +38,7 @@ A Measurement owns its three Splits, and the trainer and the evaluator both read
 - **`dev`.** What the agent reads to choose its next move.
 - **`test`.** Held back for the Baseline and the final claim.
 
-The agent picks each next move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely: Monte reads it twice, once at the Baseline and once for the final claim, and refuses a third. [The loop](/concepts/loop) covers how those reads happen.
+The agent picks each next move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely: Monte reads it twice, once at the Baseline and once for the final claim, and refuses a third. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related pages
 
@@ -46,7 +46,7 @@ The agent picks each next move from what `dev` shows, so the loop fits itself to
   <Card title="Environments" href="/concepts/environments">
     The graded world a Measurement freezes.
   </Card>
-  <Card title="The loop" href="/concepts/loop">
+  <Card title="Improvement" href="/concepts/improvement">
     How Splits, Baselines, and deltas judge improvement.
   </Card>
   <Card title="Runs, cohorts, and the ledger" href="/concepts/runs-ledger">

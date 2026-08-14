@@ -36,11 +36,20 @@ Lineage, it was missed and should be fixed.
 Keep this list short and delete entries as they land — a stale "coming soon"
 is worse than no note at all.
 
-- **Staged training.** A Run may not yet start from a Checkpoint you name:
-  there is no `--parent` or `--from-base`, so a chunk always continues its
-  Cohort's newest Checkpoint, and a Recipe change on that path is refused.
-  Until it lands, do not document branching as something a reader can do.
-  (Platform: `docs/adr/0002-staged-training-is-explicit.md`.)
+- **Branching and the Recipe tree are documented deliberately.** Henry's
+  decision, 2026-08-13: the Concepts section describes a Run starting from a
+  Checkpoint you name, carrying a different Recipe, so Checkpoints form a
+  tree. Two pieces of that are designed and not yet built, and neither is a
+  reason to remove the content:
+  - `--parent` and `--from-base` on `monte train` (platform:
+    `docs/adr/0002-staged-training-is-explicit.md`). Until they ship, a
+    chunk always continues its Cohort's newest Checkpoint.
+  - A whole-forest render. `api.lineages()` already folds Run rows into
+    descent paths per Cohort; only the drawing is missing.
+
+  The Ledger schema needs no change for either: `parent`, `Recipe`,
+  `base_model`, and the comparability hash already carry the tree. Do NOT
+  "correct" the Concepts pages by deleting branching.
 
 ## Style preferences
 
