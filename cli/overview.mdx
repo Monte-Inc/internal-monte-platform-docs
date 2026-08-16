@@ -101,7 +101,7 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, pins the bytes, and writes the manifest. This is the only command that reaches the network. Frozen means frozen, so re-adding a name refuses.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, pins the bytes, and writes the manifest. That prepare is the only network step in an Environment's life: `install` and verify read the pinned bytes and never download again. Frozen means frozen, so re-adding a name refuses.
 
 The two forms differ in what the Environment can do. `--benchmark` freezes one exam as an eval-only Environment: a yardstick that scores models and never trains. `--server` freezes a resources server's training curriculum together with the `--dev` and `--test` exams you name, which makes the Environment trainable. `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later and would otherwise never be promotable. `--as` names the result, and the default is the source name verbatim. Freezing needs a Hugging Face token. A wrong combination of these flags is a usage error and exits 2.
 
