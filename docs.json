@@ -3,13 +3,13 @@
   "theme": "mint",
   "name": "Monte Platform",
   "colors": {
-    "primary": "#4F46E5",
-    "light": "#818CF8",
-    "dark": "#3730A3"
+    "primary": "#315594",
+    "light": "#70A6C1",
+    "dark": "#2F3675"
   },
   "favicon": "/favicon.png",
   "banner": {
-    "content": "**Closed beta.** Monte is in closed beta. Interfaces and docs change quickly.",
+    "content": "Monte is in closed beta. Interfaces and docs change quickly.",
     "dismissible": true
   },
   "navigation": {
@@ -18,19 +18,17 @@
         "group": "Getting started",
         "pages": [
           "index",
-          "quickstart",
-          "real-box"
+          "quickstart"
         ]
       },
       {
         "group": "Concepts",
         "pages": [
-          "concepts/environments",
           "concepts/measurement",
-          "concepts/evaluation",
-          "concepts/training",
-          "concepts/improvement",
-          "concepts/glossary"
+          "concepts/environment",
+          "concepts/run-lineage",
+          "concepts/ledger",
+          "concepts/splits-baselines"
         ]
       },
       {
