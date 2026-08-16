@@ -28,7 +28,7 @@ Seeding runs mock and lands in seconds. A second seed against the same root refu
 ## Pages
 
 - **Training** and **Evaluations**: the Measurements, each opening its Ledger table: Run rows with a score column, the Split each Run scored, and an Evidence toggle that hides smoke rows.
-- **Run detail**: the row in full: plan settings, base model, serving stack, checkpoint relations, live events, and for training Runs the reward curve.
+- **Run detail**: the row in full, across tabs. Overview carries the plan settings, base model, serving stack, checkpoint relations, and live events. A training Run also gets a **Metrics** tab holding every per-step metric the trainer recorded.
 - **Per-task results**: every Trace of an eval Run with its score, expected answer, and extracted answer.
 - **Environments**: a task browser for each installed Environment.
 
@@ -36,5 +36,5 @@ Seeding runs mock and lands in seconds. A second seed against the same root refu
 
 - A Trace does not carry its Task's question text. Cross-reference the task ID in the Environment browser.
 - Per-task results are not paginated server-side. The test Split ships whole and paginates in the browser.
-- Training stats show reward only. Loss and KL from the training log are not parsed yet.
-- There is no archive or delete. The Evidence toggle is the only filter.
+- Metrics appear only after a training Run finishes and its checkpoint is assembled. A Run still training shows none.
+- There is no archive or delete.

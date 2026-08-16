@@ -23,13 +23,15 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte env list
     ```
-    `demo` appears as mock-only. It exists to exercise the loop itself.
+    `demo` appears as `trainable  mock`. Mock means it never needs a GPU. Trainable means it carries a train Split, so it can do the training half of the loop as well as the eval half. It exists to exercise the loop itself.
   </Step>
   <Step title="Create a Measurement">
     ```bash
-    monte init hello --env demo
+    monte init hello --env demo --recipe grpo_math_1B
     ```
-    This freezes the Splits, the eval settings, and the Environment fingerprint. The name `hello` is yours to choose.
+    This freezes the Splits, the eval settings, the Environment fingerprint, and the Recipe. The name `hello` is yours to choose.
+
+    A trainable Environment must name its Recipe here, because the training method is part of what the Measurement is. `grpo_math_1B` is the one Recipe this repo ships, and `monte config` lists what is available.
   </Step>
   <Step title="Run the Baseline eval">
     ```bash
@@ -62,5 +64,5 @@ uv tool upgrade monte
 To remove it, run `uv tool uninstall monte`.
 
 <Note>
-A real score needs a GPU box, and running on one needs a checkout of the platform repo rather than this tool install. Those instructions are being rewritten and are not on this site yet.
+A real score needs a GPU box, and submitting to one needs a git checkout of the platform repo rather than this tool install. The [CLI reference](/cli/overview#remote-runs) covers `monte box` and the `--remote` submission flow. There is no start-to-finish walkthrough for it yet.
 </Note>

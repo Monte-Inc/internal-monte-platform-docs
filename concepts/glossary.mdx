@@ -14,7 +14,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Task** | One problem for the model, plus the data needed to score an attempt at it. |
 | **Rollout** | One attempt at one Task, from prompt through to a graded reward. |
 | **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
-| **Split** | A frozen list of Task IDs. Every Measurement owns three: `train`, `dev`, and `test`. |
+| **Split** | A frozen list of Task IDs. A trainable Measurement owns `train`, `dev`, and `test`. An eval-only one owns `dev` alone. |
 
 ## What gets frozen
 

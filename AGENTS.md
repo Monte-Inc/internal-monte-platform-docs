@@ -15,10 +15,10 @@ Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — u
 - **Experiment** — RESERVED, not implemented. A high-level investigation that groups related Runs around one objective. A person declares one, so it is never derived — that is what separates it from Cohort and Lineage. No code creates, stores, or reads one. Do not document it as something a reader can use.
 - **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
 - **Environment** — a pluggable graded task package. Never "dataset".
-- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model and the Recipe bind here.
+- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model binds here. The Recipe does not: it is frozen into the Measurement.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
 - **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by the Recipe that produced it. Also derived. Checkpoints form a tree, not a line.
-- **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, defaults from the Measurement, pinned by content hash.
+- **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Frozen into the Measurement at `monte init --recipe` and pinned by content hash. Required for a trainable Environment, refused for an eval-only one. No Run overrides it, and `monte train` has no `--recipe` flag (platform commit `3da7225`, 2026-08-15).
 - **Ledger** — the append-only per-Measurement record. Never "database" or "history".
 - **Split** — a frozen task partition (train pool, dev, test).
 - **Baseline** — the base-model eval later runs are compared against.
@@ -50,6 +50,13 @@ is worse than no note at all.
   The Ledger schema needs no change for either: `parent`, `Recipe`,
   `base_model`, and the comparability hash already carry the tree. Do NOT
   "correct" the Concepts pages by deleting branching.
+
+  **Open since 2026-08-15, unresolved.** The Recipe now freezes into the
+  Measurement, so Stage's premise — several Recipes inside one Measurement —
+  cannot hold as written. Whether staging becomes cross-Measurement or the
+  freeze gains an exception is Henry's call and is not yet made. Until it is,
+  leave `concepts/improvement.mdx`'s "Continue, branch, or stage" section
+  alone: do not delete it, and do not rewrite it to match either answer.
 
 ## Style preferences
 

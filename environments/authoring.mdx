@@ -3,7 +3,9 @@ title: "Authoring an Environment"
 description: "Build a new graded Environment package"
 ---
 
-An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape. `math` is the full worked example.
+This page covers writing an Environment as a Python package. To freeze something the NeMo Gym catalog already ships, you want `monte env add` instead, which needs no Python at all. See the [CLI reference](/cli/overview#monte-env).
+
+An authored Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the worked example, and the only one the repo ships.
 
 ## Package shape
 
@@ -11,7 +13,7 @@ Register the loader as an entry point:
 
 ```toml
 [project.entry-points."monte.environments"]
-math = "monte_env_math:load_environment"
+demo = "monte_env_demo:load_environment"
 ```
 
 Implement the protocol: `splits()`, `grade()`, `fingerprint()`, and the optional `install()` and `verify_install()`.
