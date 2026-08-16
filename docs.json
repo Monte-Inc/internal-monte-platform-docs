@@ -64,6 +64,10 @@
       "destination": "/concepts/environments"
     },
     {
+      "source": "/real-box",
+      "destination": "/quickstart"
+    },
+    {
       "source": "/concepts/loop",
       "destination": "/concepts/improvement"
     },
