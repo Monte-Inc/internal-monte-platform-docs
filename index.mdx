@@ -1,53 +1,60 @@
 ---
 title: "Introduction"
+description: "What Monte is and why it exists"
 ---
 
 Monte is an agent-native platform for improving agents: an agent drives the whole post-training loop — train, evaluate, compare — against a record built for comparison.
 
 AI agents can handle individual tasks in LLM post-training research. They can change a Recipe, launch a Run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
 
-An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on one result or metric while losing sight of the wider direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
+An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on a single result or metric while losing sight of the broader direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
 
 Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to revisit decisions and choose what to try next.
 
 Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method and research strategy.
 
 <Note>
-Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
+  Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
 </Note>
 
 ## How it works
 
-Monte is an abstraction layer over the training lifecycle. It holds what each training Run did, what each eval scored, and how a model does on one task.
+Monte is an abstraction layer over the training lifecycle. It holds what each training Run did, what each eval scored, and how a model performs on a given task.
 
 An Environment is the standard object that carries what you need to score that task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte init` creates a Measurement and fixes which Tasks you score and how you score them.
 
-A Measurement starts from a base model, and that can be any model you want to start from. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it spreads over GPUs. Each Run records the Recipe it ran, so the method behind a number is never lost. Monte writes the run plan, the events, and the training logs in one standard format. You can see from them which settings to change next.
+A Measurement starts from a base model, which can be any model. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it is distributed across GPUs. Each Run records the Recipe it ran, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in a single standard format. You can see from them which settings to change next.
 
 Everything in the box below happens under one Measurement.
 
 ```mermaid actions={false}
-%%{init: {'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 12}, 'rankSpacing': 55, 'nodeSpacing': 45}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1E2024', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#70A6C1', 'lineColor': '#70A6C1', 'textColor': '#F0F1F2', 'clusterBkg': '#121417', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': '#70A6C1', 'tertiaryColor': '#1E2024', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#70A6C1'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 12}, 'rankSpacing': 70, 'nodeSpacing': 55, 'padding': 18}}}%%
 flowchart TD
-    ENV["Environment"]
+    ENV["Environment"]:::entry
 
     subgraph M[" "]
-        BM["Base model"]
-        BASE["Baseline"]
-        CP["Checkpoint"]
-        SCORE["Checkpoint score"]
-        FINAL["Final score on test"]
+        BM["Base model"]:::model
+        BASE["Baseline"]:::score
+        CP["Checkpoint"]:::model
+        SCORE["Checkpoint score"]:::score
+        FINAL["Final score on test"]:::score
 
-        BM -->|"monte eval"| BASE
-        BM -->|"monte train"| CP
-        CP -->|"monte eval"| SCORE
-        SCORE -->|"monte train"| CP
-        SCORE -->|"monte eval --split test"| FINAL
+        BM -->|" monte eval "| BASE
+        BM -->|" monte train "| CP
+        CP -->|" monte eval "| SCORE
+        SCORE -->|" monte train "| CP
+        SCORE -->|" monte eval --split test "| FINAL
     end
 
-    ENV -->|"monte init"| BM
-    FINAL -->|"monte promote"| PROM(["Promoted weights"])
-    FINAL -->|"no improvement"| NONE(["Nothing promoted"])
+    ENV -->|" monte init "| BM
+    FINAL -->|" monte promote "| PROM(["Promoted weights"]):::promoted
+    FINAL -->|" no improvement "| NONE(["Nothing promoted"]):::none
+
+    classDef entry fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef model fill:#315594,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef score fill:#1E2024,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef promoted fill:#70A6C1,stroke:#70A6C1,stroke-width:1.5px,color:#17181B;
+    classDef none fill:#1E2024,stroke:#4A4D50,stroke-width:1.5px,color:#8A8E92;
 ```
 
 The final eval on the test Split decides whether you can promote the model. Every Run, score, and cost lands in that same standard format. An agent reads that record, runs the loop, and decides what to try next.
@@ -58,9 +65,11 @@ The final eval on the test Split decides whether you can promote the model. Ever
   <Card title="Quickstart" href="/quickstart">
     Run the loop on your laptop in minutes. No GPU.
   </Card>
+
   <Card title="Improvement" href="/concepts/improvement">
     How training becomes evidence of improvement.
   </Card>
+
   <Card title="CLI reference" href="/cli/overview">
     Every command, flag, and exit code.
   </Card>
