@@ -24,11 +24,12 @@
       {
         "group": "Concepts",
         "pages": [
+          "concepts/environments",
           "concepts/measurement",
-          "concepts/environment",
-          "concepts/run-lineage",
-          "concepts/ledger",
-          "concepts/splits-baselines"
+          "concepts/evaluation",
+          "concepts/training",
+          "concepts/improvement",
+          "concepts/glossary"
         ]
       },
       {
@@ -69,6 +70,18 @@
     {
       "source": "/concepts/runs-ledger",
       "destination": "/concepts/glossary"
+    },
+    {
+      "source": "/concepts/run-lineage",
+      "destination": "/concepts/glossary"
+    },
+    {
+      "source": "/concepts/ledger",
+      "destination": "/concepts/glossary"
+    },
+    {
+      "source": "/concepts/splits-baselines",
+      "destination": "/concepts/improvement"
     }
   ],
   "logo": {
