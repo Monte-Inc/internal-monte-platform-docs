@@ -10,7 +10,7 @@ The `monte` CLI is the only write path into the platform. This page states the c
 - **Default subverb.** `monte eval math` means `monte eval run math`. Same for `train`. Options may precede the name: `monte eval --smoke math` works. The `env` and `box` groups have no default on purpose: their subcommands are different intents.
 - **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object persisted as `plan.json` and hashed into the row's provenance.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `env list`, `config`, `sync`, `push`, and every `box` subcommand. Stdout carries pure JSON: the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `env add`, `env list`, `config`, `sync`, `push`, and every `box` subcommand. Stdout carries pure JSON: the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
 - **Refusals.** Anything the platform declines exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
@@ -31,10 +31,12 @@ Three groups, and mixing them up is the most common source of a refusal.
 ### monte init
 
 ```bash
-monte init <measurement> --env <environment>
+monte init <measurement> --env <environment> [--recipe <recipe>]
 ```
 
 Creates the Measurement: freezes the Splits, the eval settings, and the Environment fingerprint into `measurement.json`. Refuses an existing name (`E_MEASUREMENT_EXISTS`).
+
+`--recipe` freezes the training [Recipe](/concepts/training#recipes) into the Measurement. A trainable Environment requires it. An eval-only Environment refuses it, because a yardstick never trains and the Recipe would be recorded and never read. The name is checked at init, so a typo fails here rather than at the first `monte train`.
 
 ### monte eval
 
@@ -50,15 +52,15 @@ Scores a model on a Split and appends the row. The default Split is dev. The def
 ### monte train
 
 ```bash
-monte train <measurement> [--model M] [--recipe R] [--smoke] [--chained]
+monte train <measurement> [--model M] [--smoke] [--chained]
                           [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
 Trains one chunk, chained from the Cohort's newest Checkpoint. Refuses without a Baseline (`E_NO_BASELINE`). `--smoke` runs a capped micro-chunk that is never evidence. `--chained` only matters with `--smoke`: real runs always chain.
 
-`--recipe` names the [Recipe](/concepts/training#recipes) for this Run, defaulting to the Measurement's. Pass a name from `monte config` or a path to a `.yaml`. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
+The [Recipe](/concepts/training#recipes) comes from the Measurement, frozen at `monte init`. A Run cannot choose one: a training method picked per Run is not a Measurement, so there is no `--recipe` flag here. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan, and the bytes in the run directory.
 
-`--remote` and `--push` work as they do on `eval`, with one addition: a real chunk's Checkpoints go to Hugging Face at the end of a `--push` run, so a real `--remote` train needs a Hugging Face token. `--remote` cannot carry a Recipe by path, only by name, because the box resolves it from its own search path.
+`--remote` and `--push` work as they do on `eval`, with one addition: a real chunk's Checkpoints go to Hugging Face at the end of a `--push` run, so a real `--remote` train needs a Hugging Face token. `--remote` also refuses a Measurement that froze its Recipe by path, because the box resolves the Recipe in its own checkout, where that file does not exist. Commit the file to `recipes/` and init a new Measurement that names it, or run without `--remote`.
 
 Chaining is same-Recipe only: a chunk whose Recipe differs from the Checkpoint it would resume is refused, naming both, because the result would be half one method and half another. Starting a second method deliberately needs an explicit parent, which is not built yet.
 
@@ -91,12 +93,19 @@ Exports a succeeded training Run's servable Checkpoint to `--dest`, sha256-verif
 ### monte env
 
 ```bash
-monte env list [--json]
+monte env add --benchmark <benchmark> [--as <name>] [--json]
+monte env add --server <server> --dev <benchmark> --test <benchmark>
+              [--as <name>] [--json]
+monte env list [--available] [--json]
 monte env install <name>
 monte env install --all
 ```
 
-`list` shows each Environment and its Gym benchmarks. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, pins the bytes, and writes the manifest. This is the only command that reaches the network. Frozen means frozen, so re-adding a name refuses.
+
+The two forms differ in what the Environment can do. `--benchmark` freezes one exam as an eval-only Environment: a yardstick that scores models and never trains. `--server` freezes a resources server's training curriculum together with the `--dev` and `--test` exams you name, which makes the Environment trainable. `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later and would otherwise never be promotable. `--as` names the result, and the default is the source name verbatim. Freezing needs a Hugging Face token. A wrong combination of these flags is a usage error and exits 2.
+
+`list` shows each Environment and its Gym benchmarks. `--available` browses what the Gym checkout ships instead, with nothing frozen. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
 
 ### monte sync, push
 
@@ -125,7 +134,7 @@ Ephemeral Lambda GPU boxes, managed from your laptop.
 
 `up` shops for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, writes the identity file, and arms a watchdog: a systemd timer that terminates the box through the Lambda API once it goes idle past its budget or over its hard TTL. Every box is born able to kill itself. `--cold` launches without the NFS data root, which means the box cannot serve a real Run.
 
-`status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag; anything else is listed read-only as foreign.
+`status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. Anything else is listed read-only as foreign.
 
 `down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. Foreign instances are refused.
 
@@ -144,7 +153,7 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 `monte eval --remote` and `monte train --remote` move one Run onto an ephemeral box and return. The flow is fixed:
 
 1. **The reproducibility gate.** Your working tree must be clean and `HEAD` must be contained in origin. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
-2. **A box.** An active box is reused when it fits; otherwise one is launched and armed. A real Run needs a warm box, because that is where the data root lives.
+2. **A box.** An active box is reused when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box, because that is where the data root lives.
 3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
 4. **The credentials.** Planted under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
 5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
