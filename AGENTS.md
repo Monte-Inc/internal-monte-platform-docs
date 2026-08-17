@@ -12,13 +12,16 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **Experiment** — RESERVED, not implemented. A high-level investigation that groups related Runs around one objective. A person declares one, so it is never derived — that is what separates it from Cohort and Lineage. No code creates, stores, or reads one. Do not document it as something a reader can use.
+- **experiment** (lowercase) — a Measurement over a trainable Environment: one training story whose evidence is self-contained. The CLI verb is `monte experiment init`. Its counterpart is a **yardstick**: a Measurement over an eval-only Environment, a long-lived reference any model can be measured against. Capital-E **Experiment** (a grouping above Measurements) stays RESERVED and unimplemented — do not document that one as usable.
 - **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
-- **Environment** — a pluggable graded task package. Never "dataset".
-- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model and the Recipe bind here.
+- **Environment** — a pluggable graded task package. Never "dataset" (see Dataset below — a different thing).
+- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model, the Recipe, and the Source bind here.
+- **Source** — what a training Run trains on, stated on every train (`--source`): a trainable Environment's curriculum (its own or another's) or a frozen Dataset (sft only). Recorded on the row; rendered in the hop label `algorithm:source`.
+- **Dataset** (capital D) — a frozen, named pile of demonstration rows for sft (`monte dataset add`), with any overlap against frozen exams recorded at freeze. Never part of a Measurement's definition. The lowercase ban above still stands.
+- **Move** — one decision by the driving agent: a Checkpoint × a Source × a Recipe.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
-- **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by the Recipe that produced it. Also derived. Checkpoints form a tree, not a line.
-- **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, defaults from the Measurement, pinned by content hash.
+- **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by its move (`algorithm:source`); the Recipe stays on the row. Also derived. Checkpoints form a tree, not a line.
+- **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, inherits the pinned trainer's shipped config, pinned by content hash.
 - **Ledger** — the append-only per-Measurement record. Never "database" or "history".
 - **Split** — a frozen task partition (train pool, dev, test).
 - **Baseline** — the base-model eval later runs are compared against.
@@ -36,20 +39,9 @@ Lineage, it was missed and should be fixed.
 Keep this list short and delete entries as they land — a stale "coming soon"
 is worse than no note at all.
 
-- **Branching and the Recipe tree are documented deliberately.** Henry's
-  decision, 2026-08-13: the Concepts section describes a Run starting from a
-  Checkpoint you name, carrying a different Recipe, so Checkpoints form a
-  tree. Two pieces of that are designed and not yet built, and neither is a
-  reason to remove the content:
-  - `--parent` and `--from-base` on `monte train` (platform:
-    `docs/adr/0002-staged-training-is-explicit.md`). Until they ship, a
-    chunk always continues its Cohort's newest Checkpoint.
-  - A whole-forest render. `api.lineages()` already folds Run rows into
-    descent paths per Cohort; only the drawing is missing.
-
-  The Ledger schema needs no change for either: `parent`, `Recipe`,
-  `base_model`, and the comparability hash already carry the tree. Do NOT
-  "correct" the Concepts pages by deleting branching.
+- (empty — the checkpoint tree, `--parent`/`--from-base`, the `monte status`
+  tree render, and the source axis all shipped as of 2026-08-17. The
+  Concepts pages' branching content is now a description of built behavior.)
 
 ## Style preferences
 
