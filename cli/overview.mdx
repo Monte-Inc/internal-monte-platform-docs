@@ -298,6 +298,6 @@ Box provisioning:
 | 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
 | 14 | `E_STORAGE` | the durable tier is unreachable: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
-| 16 | `E_REMOTE` | a remote submission could not be made: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
+| 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
 
 Codes 3 through 16 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
