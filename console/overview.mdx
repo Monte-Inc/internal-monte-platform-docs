@@ -28,13 +28,19 @@ Seeding runs mock and lands in seconds. A second seed against the same root refu
 ## Pages
 
 - **Training** and **Evaluations**: the Measurements, each opening its Ledger table: Run rows with a score column, the Split each Run scored, and an Evidence toggle that hides smoke rows.
-- **Run detail**: the row in full: plan settings, base model, serving stack, checkpoint relations, live events, and for training Runs the reward curve.
-- **Per-task results**: every Trace of an eval Run with its score, expected answer, and extracted answer.
+- **Run detail**: the row in full, in tabs. Every Run has **Overview** (plan settings, base model, serving stack, checkpoint relations), **Logs** (live events), and **Config**. A training Run also gets **Metrics**.
+- **Per-task results**: every Trace of an eval Run with its score, expected answer, and extracted answer. The Trace drawer shows the prompt the model was given.
 - **Environments**: a task browser for each installed Environment.
+
+## The Metrics tab
+
+A training Run's Metrics tab holds every per-step metric the trainer recorded, not just reward. Loss, KL penalty, gradient norm, entropy, truncation rate and the timing families are all there.
+
+The numbers come from the trainer's own TensorBoard event files, read live on each request. The Ledger keeps reward only, and only as an aggregate, so this tab is the one place the rest of a Run's numbers exist. That also means the metrics are as reachable as the event files: a Run whose files are not on this machine shows nothing.
+
+Around 88 tags is a wall, so the panel groups them into collapsible families and opens the pinned ones by default. The Overview tab repeats the pinned charts and a step-by-step reward table.
 
 ## Current limits
 
-- A Trace does not carry its Task's question text. Cross-reference the task ID in the Environment browser.
-- Per-task results are not paginated server-side. The test Split ships whole and paginates in the browser.
-- Training stats show reward only. Loss and KL from the training log are not parsed yet.
-- There is no archive or delete. The Evidence toggle is the only filter.
+- Per-task results are not paginated server-side. The whole Split ships in one response and the table pages through it after it arrives.
+- There is no archive or delete, and no search or sort on the Ledger table. The Evidence toggle is the only filter there, and it appears only when the Measurement has smoke rows to hide. A hidden row is still in the Ledger and still addressable.
