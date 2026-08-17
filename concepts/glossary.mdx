@@ -14,14 +14,15 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Task** | One problem for the model, plus the data needed to score an attempt at it. |
 | **Rollout** | One attempt at one Task, from prompt through to a graded reward. |
 | **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
-| **Split** | A frozen list of Task IDs. Every Measurement owns three: `train`, `dev`, and `test`. |
+| **Split** | A frozen list of Task IDs. A trainable Measurement owns `train`, `dev`, and `test`. An eval-only one owns `dev` alone. |
 
 ## What gets frozen
 
 | Term | Meaning |
 | --- | --- |
 | **Measurement** | A frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. See [Measurement](/concepts/measurement). |
-| **Fingerprint** | A hash over the Task files, the grader, the prompt, and the harness. A Run is refused when any of them has moved. |
+| **Fingerprint** | A hash over the Environment's frozen material: the tasks, the grader, the harness configuration, and for a trainable Environment its training data. A Run is refused when any of it has moved. |
+| **Dataset** | A frozen, named pile of demonstration rows for supervised fine-tuning. Any overlap with frozen exams is recorded when it is frozen. Never part of a Measurement. |
 | **Baseline** | The base model's score before any training, written as `eval@0`. Every later score in the same Cohort is read against it. |
 
 ## What runs
@@ -34,6 +35,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Servable folder** | The weights and tokenizer directory an inference server can load, in Hugging Face layout. |
 | **Load-check** | One prompt pushed through a real serving stack to prove a servable folder actually serves. It is not a score and not a Run. |
 | **Recipe** | The named file stating how a training Run trains: model shape, algorithm, batch geometry, optimizer. See [Training](/concepts/training#recipes). |
+| **Source** | What a training Run trains on, stated on every train: a trainable Environment's curriculum, or a frozen Dataset under an sft Recipe. Recorded on the row. |
 | **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
 
 ## What is derived
@@ -41,7 +43,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | Term | Meaning |
 | --- | --- |
 | **Cohort** | The Runs sharing a base model and comparability config: the set within which a number means something. Each one needs its own Baseline, and a delta never crosses from one Cohort into another. |
-| **Lineage** | A Checkpoint's descent path back to the base model, with every hop labelled by the Recipe that produced it. Checkpoints form a tree, so one Cohort can hold several Lineages. See [Improvement](/concepts/improvement). |
+| **Lineage** | A Checkpoint's descent path back to the base model, with every hop labelled by its move: the algorithm and the Source it trained on. Checkpoints form a tree, so one Cohort can hold several Lineages. See [Improvement](/concepts/improvement). |
 | **The claim** | The `test` score of the Checkpoint the tool selected. `test` is read exactly twice per Cohort, at the Baseline and here. |
 | **Promoting** | Exporting a claimed Checkpoint's servable folder as a checksum-verified copy, behind a confirmation you type out in full. |
 

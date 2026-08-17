@@ -31,7 +31,7 @@ Changing the harness changes the fingerprint, which makes a different Measuremen
 
 **Repeats.** One attempt per task is noisy. More attempts separate a real gain from variance. The Measurement fixes the number of attempts in its eval settings, so it cannot drift between Runs.
 
-**Reproducibility.** The same input has to return the same score. The fingerprint hashes the task files, the grader, the prompt, and the harness, and Monte refuses a Run when any of them moved.
+**Reproducibility.** The same input has to return the same score. The fingerprint hashes the Environment's frozen material — the tasks, the grader, and the harness configuration — and Monte refuses a Run when any of it moved.
 
 ## Related pages
 

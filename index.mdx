@@ -21,9 +21,9 @@ Monte is opinionated about what must be known for a comparison to mean something
 
 Monte is an abstraction layer over the training lifecycle. It holds what each training Run did, what each eval scored, and how a model performs on a given task.
 
-An Environment is the standard object that carries what you need to score that task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte init` creates a Measurement and fixes which Tasks you score and how you score them.
+An Environment is the standard object that carries what you need to score that task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte experiment init` creates a Measurement and fixes which Tasks you score and how you score them.
 
-A Measurement starts from a base model, which can be any model. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it is distributed across GPUs. Each Run records the Recipe it ran, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in a single standard format. You can see from them which settings to change next.
+A Measurement starts from a base model, which can be any model. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it is distributed across GPUs. Each Run records the Recipe it ran and the Source it trained on, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in a single standard format. You can see from them which settings to change next.
 
 Everything in the box below happens under one Measurement.
 
@@ -46,7 +46,7 @@ flowchart TD
         SCORE -->|"monte eval --split test"| FINAL
     end
 
-    ENV -->|"monte init"| BM
+    ENV -->|"monte experiment init"| BM
     FINAL -->|"monte promote"| PROM(["Promoted weights"]):::promoted
     FINAL -->|"no improvement"| NONE(["Nothing promoted"]):::none
 

@@ -19,7 +19,7 @@ flowchart LR
         EVAL["Eval on dev"] --> LEDGER["Ledger"] --> AGENT["Agent decides<br/>the next move"]
     end
     CKPT --> EVAL
-    AGENT -->|"chosen Checkpoint and Recipe"| RUN
+    AGENT -->|"chosen Checkpoint, Source, and Recipe"| RUN
 ```
 
 ## Moving the weights
@@ -32,7 +32,7 @@ The Recipe does not change while this runs. Every choice about the method is set
 
 The Checkpoint is then scored on the `dev` Split, and the result is written to the [Ledger](/concepts/glossary). The Ledger holds the Baseline and every Run since, so it is where you find out what a given Recipe did and how that compared to what came before.
 
-The agent reads that record and decides the next move, which is the part usually called the outer loop. A move is two choices made together: which Checkpoint to start from, and which Recipe to run on it. Those two choices are the arrow back into training, and running it produces one more Checkpoint. Nothing is replaced, so the record only ever grows.
+The agent reads that record and decides the next move, which is the part usually called the outer loop. A move is three choices made together: which Checkpoint to start from, what to train on (the Source: a trainable Environment's curriculum, or a frozen Dataset of demonstrations), and which Recipe to run. Those choices are the arrow back into training, and running it produces one more Checkpoint. Nothing is replaced, so the record only ever grows.
 
 If the last Recipe produced a measurable improvement, continuing with it is the obvious move. If it did not, the agent changes something and tries again.
 
@@ -50,7 +50,7 @@ Every move is one of three kinds.
 
 **Stage.** Change the kind of method rather than its settings. Supervised fine-tuning first, so the model becomes competent at the format and the tool-calling conventions, then reinforcement learning on top of those weights to sharpen it.
 
-All three appear below, in a deliberately simple picture of what one of these records could look like. Each box is a Checkpoint labelled with the step it was saved at, and each arrow is one training Run labelled with the Recipe that ran.
+All three appear below, in a deliberately simple picture of what one of these records could look like. Each box is a Checkpoint labelled with the step it was saved at, and each arrow is one training Run labelled here with the Recipe that ran. (`monte status` labels each hop with its move, as `algorithm:source`.)
 
 ```mermaid actions={false}
 flowchart TB
@@ -62,7 +62,7 @@ flowchart TB
 
 The first arrow is a fine-tuning stage, the second is the boundary where the method changes to reinforcement learning, and the fork at 50 steps is a branch retried at a lower learning rate.
 
-All three are the same operation underneath: pick a Checkpoint, pick a Recipe. Because a Checkpoint can have more than one child, what builds up is a tree, and one pass through the figure at the top of this page is a single path down it.
+All three are the same operation underneath: pick a Checkpoint, pick a Source, pick a Recipe. Because a Checkpoint can have more than one child, what builds up is a tree, and one pass through the figure at the top of this page is a single path down it.
 
 ## Making the claim
 

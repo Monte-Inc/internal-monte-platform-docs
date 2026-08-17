@@ -24,7 +24,7 @@ A Measurement fixes three things when you create it.
 2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each task gets.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-A Measurement fixes the evaluation only, not the training method. The [Recipe](/concepts/training#recipes) stays free, because that is what the agent changes between Runs.
+A Measurement fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source — what a Run trains on — because those are what the agent changes between Runs.
 
 A Measurement names no model either: each Run binds its own, so many models can compete under one Measurement.
 
@@ -32,7 +32,7 @@ Monte checks the frozen material before every Run. If any of it changed, that is
 
 ## The Splits
 
-A Measurement owns its three Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place.
+A Measurement owns its Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. A trainable Measurement carries all three. An eval-only one carries `dev` alone — one pile to score against, nothing to train on and nothing held back.
 
 - **`train`.** What the model learns on.
 - **`dev`.** What the agent reads to choose its next move.

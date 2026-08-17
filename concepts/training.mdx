@@ -32,7 +32,7 @@ The teacher can also give feedback on every token, whereas a grader returns one 
 
 ## Recipes
 
-Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of Recipes that produced it.
+Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. The Recipe states how a Run trains; what it trains on is stated separately, as the Run's Source. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of moves that produced it.
 
 ## Related pages
 
@@ -41,7 +41,7 @@ Which method you use, and at what settings, is stated in a Recipe. It is a named
     Where the reward comes from during training.
   </Card>
   <Card title="Measurement" href="/concepts/measurement">
-    The settings a Recipe inherits its defaults from.
+    What stays fixed while Recipes change.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">
     What a trained Checkpoint is used for next.
