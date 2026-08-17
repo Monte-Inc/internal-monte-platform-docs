@@ -13,12 +13,12 @@ The `monte` CLI is the only write path into the platform. This page states the c
 - **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
 - **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the writing Run's ULID and `<step>` is absolute. `monte status` prints both halves. Aliases do not resolve here, because two arms can hold one step.
 - **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
-- **Refusals.** Anything the platform declines exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
+- **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
 ## Where a command runs
 
-Three groups, and mixing them up is the most common source of a refusal.
+Three groups, and a command run from the wrong group is the most common source of a refusal.
 
 | Group | Runs from | Commands |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ monte eval <measurement> [--model M] [--split dev|test]
                          [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
-Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none. Test evals are budgeted: Baseline and final claim only.
+Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none. A test eval has a budget: the Baseline and the final claim only.
 
 `--step N` scores the Checkpoint at that absolute step. It refuses when two arms of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the arm exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is tool-selected. A `--smoke` run is exempt, because it decides nothing.
 
@@ -73,11 +73,11 @@ Trains one 50-step chunk. Refuses without a matching-Cohort Baseline (`E_NO_BASE
 
 The algorithm and the source must agree. A `grpo` or `distillation` Recipe reads its reward from a trainable Environment's Gym resources server as it trains, so it takes an Environment. An `sft` Recipe consumes demonstrations with no grader running, so it takes a Dataset frozen with `--kind sft`. A crossed pairing refuses, and the refusal names the fix.
 
-**The starting point is stated.** `--parent <run>/<step>` continues that exact Checkpoint. `--from-base` opens a fresh arm from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
+**`--parent` or `--from-base` is the starting point.** `--parent <run>/<step>` continues that exact Checkpoint. `--from-base` opens a fresh arm from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
 
 Two rules govern a continuation:
 
-- A `--parent` whose Recipe differs from this Run's is a **stage boundary**. It is a weights-only warm start: the Run stages the parent's servable weights, the trainer's step counter restarts, and the KL anchor moves to the parent Checkpoint. The optimizer and dataloader state belong to the parent's method and stay behind.
+- A `--parent` whose Recipe differs from this Run's is a **stage boundary**. It is a weights-only warm start: the Run stages the parent's servable weights, the trainer's step counter restarts, and the KL anchor moves to the parent Checkpoint. The optimizer and dataloader state belong to the parent's method, so the new Run does not restore them.
 - A same-Recipe continuation **keeps its parent's `--source`**. It restores the parent's optimizer and dataloader state, and that state indexes the parent's rows file. A different diet refuses. To change the diet, start a fresh arm with `--from-base`, or cross a stage boundary.
 
 `--smoke` runs a 3-step micro-chunk that is never evidence. It cannot be a Baseline, a parent, or a promote source.
@@ -92,7 +92,7 @@ Two rules govern a continuation:
 monte status <measurement> [--json]
 ```
 
-Prints the Run rows, the per-Cohort delta lines, the checkpoint tree, the Cycles with their strike verdicts, and the checkpoint ladder. Delta lines are paired when the per-task files allow it, and labelled unpaired when they do not.
+Prints the Run rows, the per-Cohort delta lines, the checkpoint tree, the Cycles with their strike verdicts, and the checkpoint ladder. It pairs a delta line when the per-task files allow it, and labels the line unpaired when they do not.
 
 The tree prints one line per descent path, as a start point followed by one arrow per training Run:
 
@@ -101,7 +101,14 @@ lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
 (=move=> is a stage boundary: weights-only warm start, ADR 0002)
 ```
 
-Read it as follows. A hop label is `algorithm:source` — the move that hop made, taken from the Run's own plan. A single-shaft arrow `-label->` is a continuation, and the number after it is the absolute step the hop ended on. A double-shaft arrow `=label(+N)=>` is a stage boundary, and `+N` is the length of the segment it opened. A hop that starts somewhere other than the previous hop's end prints ` from <step>`, which marks a fork off an intermediate Checkpoint. A path that starts `base` trained from the base model. A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
+Read the line as follows:
+
+- A hop label is `algorithm:source`, the move that hop made. It comes from the Run's own plan.
+- A single-shaft arrow `-label->` is a continuation. The number after it is the absolute step the hop ended on.
+- A double-shaft arrow `=label(+N)=>` is a stage boundary. `+N` is the length of the segment it opened.
+- A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate Checkpoint.
+- A path that starts `base` trained from the base model.
+- A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
 
 The legend prints only when the path crosses a stage boundary.
 
@@ -147,9 +154,9 @@ The three forms differ in what the Environment can do:
 
 A trainable Environment can be a `--source`. Both eval-only forms can be an experiment's `--eval`. Only the exams-only form holds a test pile a final claim may touch. Choose it when the yardstick must carry a final claim.
 
-`--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. A wrong combination of these flags is a usage error and exits 2.
+`--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` shows each Environment, its kind, and its Gym benchmarks. `--available` browses what the Gym checkout ships instead, with nothing frozen. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
+`list` prints each Environment, its kind, and its Gym benchmarks. `--available` prints what the Gym checkout ships instead, with nothing frozen. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
 
 ### monte dataset
 
@@ -179,9 +186,9 @@ monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
 
 The two directions of the durable tier, a results bucket that outlives any box.
 
-`sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. The Mirror is a read-only view: the durable copy wins on disagreement, local-only files are never deleted, and weight objects are skipped because weights live on Hugging Face.
+`sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. The Mirror is a read-only view. The durable copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
 
-`push` uploads one Measurement's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Measurement's own files. Nothing remote is ever deleted, so retention stays a separate deliberate act. Weight files are refused passage.
+`push` uploads one Measurement's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Measurement's own files. `push` deletes nothing remote, so retention stays a separate deliberate act. It also refuses a weight file.
 
 Both resolve a GCS service-account key: `--key-file`, then `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names, fetched in memory. Without one, `E_STORAGE`.
 
@@ -195,15 +202,15 @@ monte box down <instance-id|name> [--json]
 
 Ephemeral Lambda GPU boxes, managed from your laptop.
 
-`up` shops for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box goes idle past its budget, or over its hard TTL. Every box is born able to kill itself.
+`up` looks for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box goes idle past its budget, or over its hard TTL. Every box is born able to kill itself.
 
 The default type is `gpu_1x_h100_pcie`. `--cold` launches without the NFS data root, which means the box cannot serve a real Run.
 
-`--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a live-bench box dies mid-session. The flag plants `/etc/monte/keep-alive` after arming the watchdog, which stands the idle reaper down. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
+`--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a live-bench box dies mid-session. The flag plants `/etc/monte/keep-alive` after arming the watchdog, which disables the idle reaper. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
 
-`status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. Anything else is listed read-only as foreign.
+`status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. It lists anything else read-only, as foreign.
 
-`down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. Foreign instances are refused.
+`down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. It refuses a foreign instance.
 
 All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
 
@@ -219,8 +226,8 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 
 `monte eval --remote` and `monte train --remote` move one Run onto an ephemeral box and return. The flow is fixed:
 
-1. **The reproducibility gate.** Your working tree must be clean and `HEAD` must be contained in origin. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
-2. **A box.** An active box is reused when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box, because that is where the data root lives.
+1. **The reproducibility gate.** Your working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
+2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box, because that is where the data root lives.
 3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
 4. **The credentials.** Planted under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
 5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
@@ -242,11 +249,11 @@ Paths and execution:
 | `MONTE_LOCAL` | disposable box-local root: venvs, caches, scratch | `~/monte` |
 | `MONTE_RECIPES` | a directory of Recipes, searched before the packaged ones | unset |
 | `MONTE_GPU_CHECK_CMD` | command for the foreign-process GPU check in a real preflight. Empty disables that check | auto |
-| `MONTE_MOCK_SECONDS` | duration of a mock run, in seconds | `30` |
+| `MONTE_MOCK_SECONDS` | how long a mock run lasts, in seconds | `30` |
 | `MONTE_GPU_MEM_UTIL` | fraction of GPU memory the eval server can claim | `0.9` |
 | `MONTE_DOCKER` | docker command override, for example `sudo docker` | `docker` |
 
-Credentials. Each one resolves from a direct value first, then from 1Password, which is fetched in memory so nothing lands on disk:
+Credentials. Each one resolves from a direct value first, then from 1Password. Monte fetches a 1Password secret in memory, so nothing lands on disk.
 
 | Variable | Meaning | Default |
 |---|---|---|
