@@ -3,7 +3,11 @@ title: "Authoring an Environment"
 description: "Build a new graded Environment package"
 ---
 
-An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape. `math` is the full worked example.
+<Note>
+Most Environments are not authored. If the exam or the curriculum you want already ships with NeMo Gym, freeze it instead: `monte env add` runs Gym's prepare once, pins the bytes, and writes the manifest for you. See [monte env](/cli/overview#monte-env). Author a package when the graded world is yours and Gym has nothing to freeze.
+</Note>
+
+An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape and the only example that ships today.
 
 ## Package shape
 
@@ -11,10 +15,14 @@ Register the loader as an entry point:
 
 ```toml
 [project.entry-points."monte.environments"]
-math = "monte_env_math:load_environment"
+demo = "monte_env_demo:load_environment"
 ```
 
-Implement the protocol: `splits()`, `grade()`, `fingerprint()`, and the optional `install()` and `verify_install()`.
+Installing the package is what registers the Environment. The entry point is the whole discovery mechanism.
+
+Implement the protocol: `splits()`, `grade()`, `fingerprint()`, and the optional `install()` and `verify_install()`. `demo` implements the first three in about 60 lines, and that is enough to run the whole loop in mock.
+
+An Environment is trainable when `splits()` returns a `train` key, and eval-only when it does not. Only a trainable Environment can be a `--source` for `monte train`.
 
 ## Rules that bite
 
@@ -22,23 +30,24 @@ Implement the protocol: `splits()`, `grade()`, `fingerprint()`, and the optional
 - **The prompt template is yours, and it is frozen.** The Environment owns its prompt file, and the prompt bytes are part of the fingerprint. An edit to the prompt is a Measurement change, not a tweak.
 - **One name, once.** A duplicate Environment name across installed packages refuses at discovery. A broken `load_environment()` raises a Refusal that names the distribution.
 
-## Frozen data
+## Going beyond mock
 
-Real task data lives on the durable data root, never in the repo. It is seeded by a manifest-verified copy and never derived on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent.
+`demo` is mock-only: it declares no Gym benchmarks, so it has no real-execution half. A package that scores real models needs three more things, and no shipped package demonstrates them — the `math` worked example was deleted rather than kept half-current.
 
-## The two twins
+- **Frozen data.** Real task data lives on the durable data root, never in the repo. It is seeded by a manifest-verified copy and never derived on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent.
+- **The Gym row twin.** The `*.gym.jsonl` files, re-derived from the frozen source through the current prompt renderer. These are the rows Gym consumes.
+- **The resources-server plant.** Your FastAPI grading app plus its configs, copied to a name-derived Gym path. Training and eval both grade through this one server.
 
-Two different things get called a twin. Keep them apart:
+Keep the last two apart in your head. Both get called a twin, and they are different objects.
 
-- **The Gym row twin**: the `*.gym.jsonl` files, re-derived from the frozen source through the current prompt renderer. These are the rows Gym consumes.
-- **The resources-server plant**: your FastAPI grading app plus its configs, copied to a name-derived Gym path. Training and eval both grade through this one server.
+If this is where you are heading, read what `monte env add --server` produces first. It freezes exactly this shape, and matching it is easier than inventing it.
 
 ## Test what you wrote
 
 1. `uv run pytest`: the `test_env_*` files cover grader and install-hook behavior.
 2. `gym env test --resources-server <name>` exercises the resources server. `gym env start` plus a POST to `/verify` checks the live plant. These are Gym commands, not monte ones.
-3. `monte env list` confirms discovery. `monte env install <name>` on the box verifies the data.
-4. A smoke eval against a scratch Measurement closes the loop.
+3. `monte env list` confirms discovery, and prints the kind it derived. `monte env install <name>` on the box verifies the data.
+4. A smoke eval against a scratch experiment closes the loop.
 
 ## Related pages
 
