@@ -4,7 +4,7 @@ description: "Build a new graded Environment package"
 ---
 
 <Note>
-Most Environments are not authored. If the exam or the curriculum you want already ships with NeMo Gym, freeze it instead: `monte env add` runs Gym's prepare once, records a hash of the files, and writes the manifest for you. See [monte env](/cli/overview#monte-env). Author a package when the graded world is yours and Gym has nothing to freeze.
+Most Environments are not authored. If the exam or the curriculum you want already ships with NeMo Gym, freeze it instead: `monte env add` runs Gym's prepare once, records a hash of the files, writes the manifest for you, and pushes the result to the Vault. See [monte env](/cli/overview#monte-env). Author a package when the graded world is yours and Gym has nothing to freeze.
 </Note>
 
 An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape and the only example that ships today.

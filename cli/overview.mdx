@@ -195,7 +195,7 @@ An Environment moves down that table through its life: it ships in Gym's catalog
 
 `install` puts the frozen files where Gym reads them. It decides by the manifest. No `manifest.json` on the data root means fetch the whole directory from the Vault and prove every hash before writing it. A manifest present means verify what is here and fetch nothing. It then registers the benchmark configs. Install is idempotent.
 
-Three things bound it. Fetching needs a GCS key, so a machine without one installs only what its data root already holds. `--all` reads the same local listing, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
+Four things bound it. Fetching needs a GCS key, so a machine without one installs only what its data root already holds. Registering writes into the NeMo Gym checkout, so `install` refuses where there is none. `--all` reads the same local listing, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
 
 Installing is what makes a Vault Environment usable at all. `--eval` and `--source` both resolve against the data root, so a name `list --vault` shows you is not a name `monte train` accepts until `install` has run. With no GCS key, `install` on a name this data root has never held refuses as `E_NOT_FOUND`, which reads like an Environment that does not exist. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
@@ -208,7 +208,9 @@ monte dataset list [--vault] [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A name claimed in the Vault refuses from any box in any region, and it refuses across kinds: an Environment in the Vault takes that name from a Dataset, and the reverse. Locally the two only collide when the Environment is trainable, so the Vault's rule is the stricter one.
+A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A name claimed in the Vault refuses from any box in any region.
+
+A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
@@ -302,7 +304,7 @@ Credentials. Each one resolves from a direct value first, then from 1Password. M
 |---|---|---|
 | `MONTE_LAMBDA_KEY` | Lambda API key for `box` and `--remote` | unset |
 | `MONTE_LAMBDA_KEY_OP` | 1Password item holding it instead | unset |
-| `MONTE_GCS_KEY_FILE` | GCS service-account JSON path. The read ladder: `sync`, `env install`, and both `--vault` listings. The laptop key belongs here, and it cannot write either bucket | unset |
+| `MONTE_GCS_KEY_FILE` | GCS service-account JSON path, and the ladder every read resolves: `sync`, `env install`, and both `--vault` listings. On a laptop this is the read-only key. On a box it is the read-write one, planted there by `box up` | unset |
 | `MONTE_GCS_KEY_OP` | 1Password document holding it instead | unset |
 | `MONTE_GCS_BOX_KEY_FILE` | the read-write key. Every write resolves it first: `push`, `--push`, and a Vault freeze. Also the key `box up` plants on a box | unset |
 | `MONTE_GCS_BOX_KEY_OP` | 1Password document holding that one. The default applies to `box up` alone, so a write from your own machine needs one of these two set | `GCS SA key - monte-box (rw monte-platform-results)` |
