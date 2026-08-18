@@ -2,13 +2,13 @@
 title: "The Improver"
 ---
 
-The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on a GPU box. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
 ## One turn of the loop
 
 The Improver works one Measurement at a time, and a turn of its loop is four steps.
 
-1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree with a `<run>/<step>` name for every Checkpoint in it.
+1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
 2. **Decide one Move**: which Checkpoint to start from, which Source to train on, and which Recipe to run.
 3. **Train one chunk** with those three coordinates stated in full, since Monte infers none of them.
 4. **Score the new Checkpoint on `dev`**, read the paired delta, and start again.
@@ -40,7 +40,7 @@ The box is not part of the Envelope's lifetime. One GPU box is acquired for the 
 
 Three refusals are live for as long as an Envelope is active, and they hold regardless of which command asked or which harness ran it.
 
-- **`monte eval --split test` is refused**, in every spelling, `--smoke` included. A smoke Run skips the two-read budget on `test`, so it is the one spelling that would otherwise work.
+- **`monte eval <measurement> --split test` is refused**, in every spelling, `--smoke` included. A smoke Run skips the two-read budget on `test`, so it is the one spelling that would otherwise work.
 - **`monte promote` is refused.** Promotion is a human act on audited evidence, and it waits for the search to close.
 - **No new Run starts past the window's close.** The window is the approved spend, so a Run started after it is spend nobody approved.
 
@@ -68,8 +68,9 @@ After the window closes, a finalizer runs a fixed sequence on the box.
 2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
 3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the Checkpoint Monte selects.
 4. **Push the claimed Checkpoint's weights** to Hugging Face, where weights live.
-5. **Sync**, which carries the results tree and the Improver's own transcript.
-6. **Release the box to idle**, rather than terminating it, since the box outlives the Envelope.
+5. **Sync the results tree** to the durable tier, which is what survives the box.
+6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
+7. **Release the box to idle**, rather than terminating it, since the box outlives the Envelope.
 
 A step that refuses or fails is recorded and the sequence continues past it. A failed claim should not also cost the search its sync, and an unreleased box would stay out of normal idle reaping.
 
