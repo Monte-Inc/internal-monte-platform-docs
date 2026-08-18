@@ -171,7 +171,7 @@ monte env install --all
 
 That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then the ordinary ladder. A laptop's ordinary key is read-only on the Vault, so a laptop needs one of those two set to push at all.
 
-`add` checks for that key before it runs prepare, because prepare downloads from live sources and a 403 found later throws the whole freeze away. No writable key is not a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have it. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today; once a Baseline exists it is a different Measurement.
+`add` checks for that key before it runs prepare, because prepare downloads from live sources and a 403 found later throws the whole freeze away. No writable key is not a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have it. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Measurement.
 
 A push that fails after the freeze is the other case: a name that lost its race to another region, or a dropped connection. Monte removes the manifest it just wrote, so nothing discovers the directory and the add re-runs. A lost race names both halves of its fix: re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
 
@@ -239,7 +239,7 @@ monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
 
 `push` uploads one Measurement's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Measurement's own files. `push` deletes nothing remote, so retention stays a separate deliberate act. It also refuses a weight file.
 
-Both take `--key-file` first. After that they differ, because one reads and one writes. `sync` resolves `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names. `push` resolves the read-write key first, `MONTE_GCS_BOX_KEY_FILE` then `MONTE_GCS_BOX_KEY_OP`, and falls back to `sync`'s ladder. A Vault freeze resolves the same write ladder. Keys are fetched in memory. For `sync` and `push`, no key is `E_STORAGE`; a freeze treats it differently, and [`monte env`](#monte-env) says how.
+Both take `--key-file` first. After that they differ, because one reads and one writes. `sync` resolves `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names. `push` resolves the read-write key first, `MONTE_GCS_BOX_KEY_FILE` then `MONTE_GCS_BOX_KEY_OP`, and falls back to `sync`'s ladder. A Vault freeze resolves the same write ladder. Keys are fetched in memory. For `sync` and `push`, no key is `E_STORAGE`. A freeze treats it differently, and [`monte env`](#monte-env) says how.
 
 ### monte box
 
