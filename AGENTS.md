@@ -45,9 +45,10 @@ is worse than no note at all.
   Vault all live on the platform's `vault-core` branch, not yet on its `main`.
   This site describes them as built. Delete this entry when `vault-core`
   merges, and do not merge the docs change before it.
-- (the checkpoint tree, `--parent`/`--from-base`, the `monte status` tree
-  render, and the source axis all shipped as of 2026-08-17. The Concepts
-  pages' branching content is now a description of built behavior.)
+(The checkpoint tree, `--parent`/`--from-base`, the `monte status` tree
+render, and the source axis all shipped as of 2026-08-17, and their entries
+were deleted then. The Concepts pages' branching content is a description of
+built behavior.)
 
 ## Style preferences
 
