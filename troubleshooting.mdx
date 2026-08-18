@@ -85,7 +85,7 @@ A freeze with no key for the Vault also checks this data root alone for the name
 
 Losing the name to another region is the case that changes your data root. Monte removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie no later command could correct. The frozen files stay on disk, and nothing discovers them.
 
-Every other push failure keeps the freeze. A dropped connection, an IAM change mid-flight, a Ctrl-C during a multi-gigabyte upload: none of them took a name from anyone, and prepare can be expensive to run again, so the Environment is left exactly where a keyless freeze would leave it. Treat it as the entry above.
+Every other push failure keeps the freeze. A dropped connection, an IAM change mid-flight, a Ctrl-C during a multi-gigabyte upload: none of them took a name from anyone, and prepare can be expensive to run again, so the Environment is left exactly where a keyless freeze would leave it. The command refuses with `E_STORAGE` rather than exiting clean, and the refusal says the freeze survived and names the directory holding it. Treat what you have as the entry above.
 
 The lost-race refusal names both halves of its fix. Re-add under a new name, which is `--as` for an Environment and the name argument for a Dataset. Then bring the winner's copy here: `monte env install <name>` for an Environment, `monte dataset show <name>` for a Dataset.
 

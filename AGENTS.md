@@ -45,8 +45,7 @@ is worse than no note at all.
   and `monte dataset show`, and the read-write key ladder that `push`,
   `--push` and a freeze resolve, all live on the platform's `vault-core` branch, not yet on its `main`.
   This site describes them as built, and was verified against `vault-core` at
-  `3dddfc4`. That branch was still moving when this was written, so re-read
-  the freeze and credential paragraphs against its tip before merging.
+  `6f8bc37`, the commit that branch settled on.
   Delete this entry when `vault-core` merges, and do not merge the docs
   change before it.
 

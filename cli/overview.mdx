@@ -177,7 +177,7 @@ That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS
 
 A push that fails after the freeze splits in two. Losing the name to another region is the one case Monte cannot leave alone: it removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie. The refusal names both halves of the fix. Re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
 
-Every other push failure keeps the freeze. A dropped connection or a Ctrl-C took nothing from anyone, and prepare can be expensive to run again, so the Environment stays exactly as a keyless freeze would leave it: here, and nowhere else.
+Every other push failure keeps the freeze. A dropped connection or a Ctrl-C took nothing from anyone, and prepare can be expensive to run again, so the Environment stays exactly as a keyless freeze would leave it: here, and nowhere else. The command still refuses, with `E_STORAGE`, and the refusal says the freeze survived and names the directory holding it.
 
 The three forms differ in what the Environment can do:
 
@@ -330,6 +330,7 @@ Box provisioning:
 |---|---|---|
 | `MONTE_SSH_KEY_NAME` | account SSH key name, needed when the account has several | unset |
 | `MONTE_NFS_NAME` | the NFS a warm box attaches | `monte-post-training` |
+| `MONTE_VAULT_BUCKET` | the Vault bucket to read and write, for a staging one. Provisioning and the runtime read the same variable | `monte-platform-vault` |
 | `MONTE_STATE_DIR` | directory holding the box identity file | `~/.monte` |
 
 ## Exit codes
@@ -348,7 +349,7 @@ Box provisioning:
 | 8 | `E_MEASUREMENT_EXISTS` | `experiment init` on a name that exists |
 | 9 | `E_NOT_FOUND` | no such Measurement, Run, Environment, Dataset, or Checkpoint. Also a Vault fetch with no key to read with, which cannot tell the two apart |
 | 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
-| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or bytes pulled from the Vault fail theirs. A frozen Environment already on the data root refuses under code 3 instead |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or something the Vault holds is wrong: bytes that fail their hash, or a manifest that is not one. A frozen Environment already on the data root refuses under code 3 instead |
 | 12 | `E_SERVING` | the serving stack produced no measurement: no snapshot, vLLM down, Gym failed, or no rollouts |
 | 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
 | 14 | `E_STORAGE` | a cloud bucket is unreachable in either direction: credentials, package, or path |
