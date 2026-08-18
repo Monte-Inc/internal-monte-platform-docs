@@ -192,10 +192,10 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 | Command | What it answers | What it reads |
 | --- | --- | --- |
 | `monte env list --available` | which benchmarks you could freeze | the Gym checkout |
-| `monte env list --vault` | what you have frozen | the Vault, over the network |
+| `monte env list --vault` | what the Vault holds | the Vault, over the network |
 | `monte env list` | what is usable here, now | local disk |
 
-An Environment moves down that table through its life: it ships in Gym's catalog, `env add` freezes it into the Vault, and `env install` brings it down to this machine. Bare `list` prints each Environment, its kind, and its Gym benchmarks. It stays local and instant, with no network call. That is why `--vault` is a flag. The same discovery path runs on every `monte` command, so the default must never reach the network.
+An Environment moves down that table through its life: it ships in Gym's catalog, `env add` freezes it and pushes it to the Vault, and `env install` brings it down to this machine. Bare `list` prints each Environment, its kind, and its Gym benchmarks. It stays local and instant, with no network call. That is why `--vault` is a flag. The same discovery path runs on every `monte` command, so the default must never reach the network.
 
 `install` puts the frozen files where Gym reads them. It decides by the manifest. No `manifest.json` on the data root means fetch the whole directory from the Vault and prove every hash before writing it. A manifest present means verify what is here and fetch nothing. It then registers the benchmark configs. Install is idempotent.
 
@@ -216,7 +216,7 @@ monte dataset show <name> [--json]
 
 A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there as well, and then it refuses from any box in any region.
 
-A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source.
+A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Both checks read the Vault, so a freeze with no key for it runs neither.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
@@ -224,9 +224,9 @@ Name the rows once, from one of two places. `--from-file` freezes a local JSONL 
 
 For a flat pile, `--input-key` names the prompt column and `--output-key` names the completion column. They default to `input` and `output`.
 
-`list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the Vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk.
+`list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the Vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk, and fetches those bytes from the Vault first when the data root does not hold them.
 
-A frozen Dataset lives in [the Vault](/concepts/environments#where-a-frozen-input-lives) under the same rules an Environment does. The copy on the data root is a materialization of it, and `show` is the command that fetches that copy back. Nothing else does: `monte train --source <name>` resolves against the data root alone, so run `monte dataset show <name>` first on a machine that has never held the rows. That fetch needs a GCS key. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
+A frozen Dataset lives in [the Vault](/concepts/environments#where-a-frozen-input-lives) under the same rules an Environment does. The copy on the data root is a materialization of it, and `show` is the only command that fetches one back. `monte train --source <name>` resolves against the data root alone, so a machine that has never held the rows needs `monte dataset show <name>` first. That fetch needs a key for reading. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
 
 ### monte sync, push
 
@@ -310,10 +310,10 @@ Credentials. Each one resolves from a direct value first, then from 1Password. M
 |---|---|---|
 | `MONTE_LAMBDA_KEY` | Lambda API key for `box` and `--remote` | unset |
 | `MONTE_LAMBDA_KEY_OP` | 1Password item holding it instead | unset |
-| `MONTE_GCS_KEY_FILE` | GCS service-account JSON path, and the ladder every read resolves: `sync`, `env install`, `dataset show`, and both `--vault` listings. On a laptop this is the read-only key. On a box it is the read-write one, planted there by a `--remote` submission | unset |
+| `MONTE_GCS_KEY_FILE` | the key every read resolves, before `MONTE_GCS_KEY_OP` and nothing else: `sync`, `env install`, `dataset show`, both `--vault` listings. A laptop's cannot write either bucket. A box's can, because `--remote` plants the read-write key here | unset |
 | `MONTE_GCS_KEY_OP` | 1Password document holding it instead | unset |
-| `MONTE_GCS_BOX_KEY_FILE` | the read-write key. Every write resolves it first: `push`, `--push`, and a Vault freeze. The two ladders are separate, so a laptop that both reads and freezes sets one variable from each pair | unset |
-| `MONTE_GCS_BOX_KEY_OP` | 1Password document holding that one. The default is used when `--remote` plants a key on a box, and nowhere else, so a write from your own machine needs one of these two set | `GCS SA key - monte-box (rw monte-platform-results)` |
+| `MONTE_GCS_BOX_KEY_FILE` | the read-write key, tried first by every write: `push`, `--push`, and a Vault freeze. A write falls back to the read pair above; a read never reaches for this one | unset |
+| `MONTE_GCS_BOX_KEY_OP` | 1Password document holding that one. The default applies when `--remote` plants a key on a box and nowhere else, so writing from a laptop means setting one of these two yourself | `GCS SA key - monte-box (rw monte-platform-results)` |
 | `HF_TOKEN` | Hugging Face token: a real train pushes Checkpoints there, `env add --server` freezes with it, and `dataset add --from-hf` reads gated repos with it | unset |
 | `MONTE_HF_TOKEN_OP` | 1Password item holding it instead | unset |
 | `MONTE_HF_ORG` | Hugging Face org the weights repos live under | `monte-inc` |
@@ -335,19 +335,19 @@ Box provisioning:
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag, a missing argument, a missing `--recipe` or `--source` |
-| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target, a frozen Environment file that does not match the manifest |
+| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target, a frozen Environment file on the data root that does not match the manifest |
 | 3 | `E_NO_BASELINE` | train without a matching-Cohort Baseline |
 | 4 | `E_FROZEN_FIELD` | a launch would change a frozen Measurement field |
 | 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
 | 6 | `E_PREFLIGHT` | preflight failed: the lock, fingerprint drift, the free-space minimum, a foreign GPU process, a test eval on a Cohort with no `test@0` baseline, or a final-claim selection whose candidates are not all pairable |
 | 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
 | 8 | `E_MEASUREMENT_EXISTS` | `experiment init` on a name that exists |
-| 9 | `E_NOT_FOUND` | no such Measurement, Run, Environment, Dataset, or Checkpoint |
+| 9 | `E_NOT_FOUND` | no such Measurement, Run, Environment, Dataset, or Checkpoint. Also a Vault fetch with no key to read with, which cannot tell the two apart |
 | 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
-| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or a copy pulled from the Vault fails its hash |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or bytes pulled from the Vault fail theirs. A frozen Environment already on the data root refuses under code 3 instead |
 | 12 | `E_SERVING` | the serving stack produced no measurement: no snapshot, vLLM down, Gym failed, or no rollouts |
 | 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
-| 14 | `E_STORAGE` | a cloud bucket is unreachable, or the resolved key cannot write to it: credentials, package, or path |
+| 14 | `E_STORAGE` | a cloud bucket is unreachable in either direction: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
 | 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
 

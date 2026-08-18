@@ -27,21 +27,15 @@ You can measure any environment from the NeMo Gym catalog, or write your own as 
 
 ## Where a frozen input lives
 
-A frozen Environment lives in the Vault, a cloud bucket that outlives any box. So does a frozen Dataset. That is the copy Monte treats as true, and what follows holds for both kinds.
+A frozen Environment lives in the Vault, a cloud bucket that outlives any box, and so does a frozen Dataset. That copy is the one Monte treats as true, and what follows holds for both kinds.
 
-The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install <name>` fetches them back and proves every hash before it writes them, and `monte dataset show <name>` does the same for a Dataset. So a local copy is one you can give up and get again, and losing a box, or the disk its data root sits on, costs you no frozen input that reached the Vault.
+The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install` fetches them back and proves every hash before it writes them, which is what makes a local copy something you can give up and ask for again. A Dataset works the same way, with `monte dataset show` as the command that fetches it. Losing a box, or the disk its data root sits on, therefore costs you no frozen input that reached the Vault. Freezing is the only step that writes there, and after it the flow runs one way, from the Vault to a data root to the Gym checkout, so no copy can change the one above it.
 
-Both halves need cloud credentials, and not the same ones. Writing resolves the read-write key, reading resolves the ordinary one, and the two ladders do not fall back to each other. [The CLI reference](/cli/overview#environment-variables) names the variables.
+Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [CLI reference](/cli/overview#environment-variables) names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment you ship as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to the `install()` you wrote. Those are the copies you are holding yourself, and `monte env list --vault` is how you find out which kind you have.
 
-Two kinds never reach it. An add that runs without a key that can write the Vault freezes on the data root alone and says so, naming the key and asking you to freeze again while nothing is bound to it. An Environment you ship as a package is never pushed at all. Those two you hold yourself.
+The reason any of this matters is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, which is a different Measurement, and every Baseline taken under the old one stops meaning anything. The bytes cannot be made a second time, so they have to outlive the machine that made them.
 
-`monte env list --vault` says whether the Vault holds a name, which is what to ask before you give up a local copy. It reads the network, so a machine with no credentials cannot ask. Move the local copy out of the data root rather than deleting it, and delete it once the refetch has proven itself: a pull checks its own hashes and can refuse.
-
-Freezing is the only step that writes to the Vault. After that the flow runs one way, Vault to data root to Gym checkout, and no copy can change the one above it.
-
-The reason to keep the bytes is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, and a different fingerprint is a different Measurement. Every Baseline taken under the old one is then worth nothing. The bytes have to survive, because they cannot be made twice.
-
-That is the rule behind all of it: a data root is where things are materialized, not where they live. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. What breaks the rule you own yourself: the two kinds above, and a Run's evidence before `monte push` sends it. Push is a deliberate act, and until it runs the data root holds the only copy of that Run.
+That is the rule the Vault exists to enforce: a data root is where things are materialized, not where they live. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. That last hop is `monte push` and it is a deliberate act, so until it runs the data root holds the only copy of that Run.
 
 ## How a graded rollout runs
 
