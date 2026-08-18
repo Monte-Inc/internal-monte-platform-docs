@@ -25,17 +25,19 @@ Every Environment must have a grader. Ungraded rows enter Monte only one way: fr
 
 You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
 
-## Where an Environment lives
+## Where a frozen input lives
 
-A frozen Environment lives in the Vault, a cloud bucket that outlives any box. That is the copy Monte treats as true.
+A frozen Environment lives in the Vault, a cloud bucket that outlives any box. So does a frozen Dataset. That is the copy Monte treats as true, and what follows holds for both kinds.
 
-The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install <name>` fetches them back and proves every hash before it writes them. So you can delete the local copy and get it back, and losing a box, or the disk its data root sits on, costs you no Environment that reached the Vault. Both halves need cloud credentials, the push and the fetch alike.
+The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install <name>` fetches them back and proves every hash before it writes them, and `monte dataset show <name>` does the same for a Dataset. So a local copy is one you can give up and get again, and losing a box, or the disk its data root sits on, costs you no frozen input that reached the Vault.
+
+Both halves need cloud credentials, and not the same ones. Writing resolves the read-write key, reading resolves the ordinary one, and the two ladders do not fall back to each other. [The CLI reference](/cli/overview#environment-variables) names the variables.
 
 Two kinds never reach it. An add that runs without a key that can write the Vault freezes on the data root alone and says so, naming the key and asking you to freeze again while nothing is bound to it. An Environment you ship as a package is never pushed at all. Those two you hold yourself.
 
-`monte env list --vault` says whether the Vault holds a name, which is what to ask before you give up a local copy. It reads the network, so a machine with no credentials cannot ask. Move a local copy aside rather than deleting it, and delete it once the refetch has proven itself.
+`monte env list --vault` says whether the Vault holds a name, which is what to ask before you give up a local copy. It reads the network, so a machine with no credentials cannot ask. Move the local copy out of the data root rather than deleting it, and delete it once the refetch has proven itself: a pull checks its own hashes and can refuse.
 
-Freezing is the only step that writes to the Vault. After that the flow runs one way, Vault to data root to Gym checkout, and no copy can change the one above it. A frozen Dataset lives there under the same rules, and `monte dataset show` is what fetches one back.
+Freezing is the only step that writes to the Vault. After that the flow runs one way, Vault to data root to Gym checkout, and no copy can change the one above it.
 
 The reason to keep the bytes is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, and a different fingerprint is a different Measurement. Every Baseline taken under the old one is then worth nothing. The bytes have to survive, because they cannot be made twice.
 

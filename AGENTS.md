@@ -41,8 +41,9 @@ Keep this list short and delete entries as they land — a stale "coming soon"
 is worse than no note at all.
 
 - **The Vault** — `monte env list --vault`, `monte dataset list --vault`, the
-  push on `env add` / `dataset add`, and `monte env install` fetching from the
-  Vault all live on the platform's `vault-core` branch, not yet on its `main`.
+  push on `env add` / `dataset add`, and the Vault fetch inside `monte env
+  install` and `monte dataset show` all live on the platform's `vault-core`
+  branch, not yet on its `main`.
   This site describes them as built. Delete this entry when `vault-core`
   merges, and do not merge the docs change before it.
 

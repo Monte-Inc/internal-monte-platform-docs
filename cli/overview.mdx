@@ -167,7 +167,7 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-an-environment-lives). That prepare is the only step in an Environment's life that reads a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. The name is claimed in the Vault, so an add that reached the Vault refuses from any box in any region.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). That prepare is the only step in an Environment's life that reads a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there too, and then re-adding it refuses from any box in any region. A freeze with no such key checks this data root alone.
 
 That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then the ordinary ladder. A laptop's ordinary key is read-only on the Vault, so a laptop needs one of those two set to push at all.
 
@@ -187,7 +187,7 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 
 `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` has three scopes. Together they read as one progression.
+`list` has three scopes. Together they read as one progression, and `--available` and `--vault` refuse together, because each names a different place to look.
 
 | Command | What it answers | What it reads |
 | --- | --- | --- |
@@ -199,7 +199,9 @@ An Environment moves down that table through its life: it ships in Gym's catalog
 
 `install` puts the frozen files where Gym reads them. It decides by the manifest. No `manifest.json` on the data root means fetch the whole directory from the Vault and prove every hash before writing it. A manifest present means verify what is here and fetch nothing. It then registers the benchmark configs. Install is idempotent.
 
-Four things bound it. Fetching needs a GCS key, so a machine without one installs only what its data root already holds. Registering writes into the NeMo Gym checkout, so `install` refuses where there is none. `--all` reads the same local listing, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
+Three things bound the fetch. It needs a key for reading, so a machine without one installs only what its data root already holds. `--all` builds its list the way bare `monte env list` does, from local disk, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
+
+Registering is bounded too, with or without a Vault: it writes into the NeMo Gym checkout, so `install` refuses on a machine whose `MONTE_LOCAL` has no stack.
 
 Installing is what makes a Vault Environment usable at all. `--eval` and `--source` both resolve against the data root, so a name `list --vault` shows you is not a name `monte train` accepts until `install` has run. With no key for reading, `install` on a name this data root has never held refuses as `E_NOT_FOUND`, which reads like an Environment that does not exist. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
@@ -212,7 +214,7 @@ monte dataset list [--vault] [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A name claimed in the Vault refuses from any box in any region.
+A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there as well, and then it refuses from any box in any region.
 
 A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source.
 
@@ -224,7 +226,7 @@ For a flat pile, `--input-key` names the prompt column and `--output-key` names 
 
 `list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the Vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk.
 
-A frozen Dataset lives in [the Vault](/concepts/environments#where-an-environment-lives) under the same rules an Environment does. The copy on the data root is a materialization of it, and `show` is the command that fetches that copy back. Nothing else does: `monte train --source <name>` resolves against the data root alone, so run `monte dataset show <name>` first on a machine that has never held the rows. That fetch needs a GCS key. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
+A frozen Dataset lives in [the Vault](/concepts/environments#where-a-frozen-input-lives) under the same rules an Environment does. The copy on the data root is a materialization of it, and `show` is the command that fetches that copy back. Nothing else does: `monte train --source <name>` resolves against the data root alone, so run `monte dataset show <name>` first on a machine that has never held the rows. That fetch needs a GCS key. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
 
 ### monte sync, push
 
@@ -233,7 +235,7 @@ monte sync [measurement...] [--bucket B] [--key-file PATH] [--json]
 monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
 ```
 
-`sync` and `push` are the two directions of the results bucket, the cloud bucket that outlives any box. It holds results only. Frozen Environments and Datasets live in [the Vault](/concepts/environments#where-an-environment-lives), and `monte env` and `monte dataset` move those.
+`sync` and `push` are the two directions of the results bucket, the cloud bucket that outlives any box. It holds results only. Frozen Environments and Datasets live in [the Vault](/concepts/environments#where-a-frozen-input-lives), and `monte env` and `monte dataset` move those.
 
 `sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. A Mirror is a read-only local copy of the results, so you can read Ledger state with no box up. Weights never enter it. The bucket copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
 
@@ -333,7 +335,7 @@ Box provisioning:
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag, a missing argument, a missing `--recipe` or `--source` |
-| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target |
+| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target, a frozen Environment file that does not match the manifest |
 | 3 | `E_NO_BASELINE` | train without a matching-Cohort Baseline |
 | 4 | `E_FROZEN_FIELD` | a launch would change a frozen Measurement field |
 | 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
@@ -342,7 +344,7 @@ Box provisioning:
 | 8 | `E_MEASUREMENT_EXISTS` | `experiment init` on a name that exists |
 | 9 | `E_NOT_FOUND` | no such Measurement, Run, Environment, Dataset, or Checkpoint |
 | 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
-| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, or a frozen file is missing, unreadable, or does not match its pin |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or a copy pulled from the Vault fails its hash |
 | 12 | `E_SERVING` | the serving stack produced no measurement: no snapshot, vLLM down, Gym failed, or no rollouts |
 | 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
 | 14 | `E_STORAGE` | a cloud bucket is unreachable, or the resolved key cannot write to it: credentials, package, or path |
