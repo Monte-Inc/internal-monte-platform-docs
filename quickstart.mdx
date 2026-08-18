@@ -3,7 +3,7 @@ title: "Quickstart"
 description: "Your first loop on a laptop, no GPU needed"
 ---
 
-Off the GPU box, every Run mocks: real CLI, real Ledger, fake scores. That makes a laptop the safe place to learn the loop.
+Off a GPU box, every Run is a mock Run: the real CLI, a real Ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
 
 You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-monte-platform`. uv fetches its own Python, and you never clone the repo.
 
@@ -23,13 +23,13 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte env list
     ```
-    `demo` appears as trainable and mock. Trainable means it owns a curriculum, so it can be both the exam you score against and the data you train on. Mock means every Run here is a rehearsal. `demo` exists to exercise the loop itself.
+    `demo` appears as trainable and mock. Trainable means it owns a curriculum: its own training tasks, graded live by its own grader as the model attempts them. That is why `demo` can be both the exam you score against and the material you train on. Mock means it can be scored without a GPU box, which is why every Run you make here is a mock Run. `demo` exists to exercise the loop itself.
   </Step>
   <Step title="Create an experiment">
     ```bash
     monte experiment init hello --eval demo
     ```
-    This freezes the Splits, the eval settings, and the Environment fingerprint. `--eval` names the Environment whose exams decide what "better" means — every score in this experiment comes from there. The name `hello` is yours to choose.
+    This freezes the Splits, the eval settings, and the Environment fingerprint. `--eval` names the Environment whose exams decide what "better" means. Every score in this experiment comes from there. The name `hello` is yours to choose.
 
     Nothing about training is frozen here. You state the method and the data on each Run, in the next steps.
   </Step>
@@ -37,13 +37,25 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte eval hello
     ```
-    The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. This is `eval@0`, the score you compare every later Run against.
+    The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. This scores the `dev` Split and lands as `eval@0`, the score you compare every later Run against.
+  </Step>
+  <Step title="Score the base model on test">
+    ```bash
+    monte eval hello --split test
+    ```
+    Run this now, before any training. `monte eval` scores the `dev` Split unless you say otherwise, so the Baseline eval above did not touch `test`.
+
+    The `test` Split is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
+
+    If you train before taking this first read, Monte refuses a test eval on the new Checkpoint with `E_PREFLIGHT`, and the test delta cannot be recovered in that Cohort.
   </Step>
   <Step title="Rehearse with a smoke chunk">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --smoke
     ```
-    Three things travel with every training Run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the Run trains ON — here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
+    A chunk is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. You never state a step count.
+
+    Three things travel with every training Run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the Run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
 
     A smoke Run is a capped sanity pass. It is never evidence: it cannot be a Baseline, a parent, or a promote source.
   </Step>
@@ -51,23 +63,41 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --from-base
     ```
-    Now the starting point is stated. `--from-base` opens a fresh arm from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing checkpoint — `monte status` prints the exact spelling.
+    Now the starting point is stated. `--from-base` opens a fresh branch from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing Checkpoint. `monte status` prints the exact spelling.
 
     This chunk is 50 steps and it does count as evidence.
   </Step>
-  <Step title="Score the new checkpoint">
+  <Step title="Score the new Checkpoint">
     ```bash
     monte eval hello
     ```
-    With no target flag, an eval scores the Cohort's newest checkpoint. That is the chunk you just trained, so this row lands as `eval@50`.
+    With no target flag, an eval scores the Cohort's newest Checkpoint. That is the chunk you just trained, so this row lands as `eval@50`.
   </Step>
   <Step title="Read the Ledger">
     ```bash
     monte status hello
     ```
-    You get the Run rows, the Cohort's delta from Baseline to newest, the checkpoint tree, and the checkpoint ladder. Smoke rows carry a `[not evidence]` marker.
+    You get the Run rows, one summary line per Cohort, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
 
-    The tree line reads `base -grpo:demo-> 50`. Each arrow is one training Run, labelled with the move it made: the algorithm, then the source it trained on.
+    The Cohort block reads like this:
+
+    ```text
+    cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1: dev 0.6667 -> 1.0 (delta +0.3333 ± 0.3772 paired, 2 fixed / 0 broken, eval@50)
+      lineage: base -grpo:demo-> 50
+      cycles: eval@50 +0.3333 ±0.3772 STRIKE  (1 strike)
+    ```
+
+    Take it line by line.
+
+    `cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1` names the base model and the revision it is pinned to. `dev 0.6667 -> 1.0` is the `dev` score at the Baseline and at the newest eval, and `eval@50` says which eval produced that newest score.
+
+    `delta +0.3333` is the difference between those two scores. `paired, 2 fixed / 0 broken` says how Monte checked it: both evals scored the same frozen tasks, so it compared them task by task. Two tasks the Baseline got wrong came out right, none went the other way, and tasks that came out the same way both times cancel. `± 0.3772` is the interval around the delta. Pairing changes that interval, not the delta itself.
+
+    `lineage:` prints the Lineage, the path this Checkpoint took back to the base model. Each arrow is one training Run, labelled with the Move it made: the algorithm, then the source it trained on. Here one Run took the base model to step 50, training with `grpo` on the `demo` source.
+
+    `cycles:` prints the verdict on each Cycle, and a Cycle is the first eval that counts as evidence at a new highest step along one Lineage. `STRIKE` means the paired `dev` delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
+
+    `(1 strike)` is a count of the strikes so far, not a countdown. A strike is a label you read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and you decide when to stop.
   </Step>
 </Steps>
 
