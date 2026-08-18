@@ -28,6 +28,8 @@ Three groups, and a command run from the wrong group is the most common source o
 
 `--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
 
+`env install` is the exception in the first row. It registers into the NeMo Gym checkout, so it needs a machine whose `MONTE_LOCAL` holds the stack.
+
 ## Commands
 
 ### monte experiment
@@ -167,13 +169,15 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). That prepare is the only step in an Environment's life that reads a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there too, and then re-adding it refuses from any box in any region. A freeze with no such key checks this data root alone.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). Prepare and, for `--server`, the training data it downloads with your Hugging Face token are the only steps in an Environment's life that read a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there too, and then re-adding it refuses from any box in any region. A freeze with no such key checks this data root alone.
 
 That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then the ordinary ladder. A laptop's ordinary key is read-only on the Vault, so a laptop needs one of those two set to push at all.
 
-`add` checks for that key before it runs prepare, because prepare downloads from live sources and a 403 found later throws the whole freeze away. No writable key is not a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have it. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Measurement.
+`add` checks for that key before it runs prepare, because prepare downloads from live sources and a 403 found later throws the whole freeze away. No writable key is not a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have the key, after moving the local copy out of the data root: the name is claimed there, and an add refuses a name it already holds. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Measurement.
 
-A push that fails after the freeze is the other case: a name that lost its race to another region, or a dropped connection. Monte removes the manifest it just wrote, so nothing discovers the directory and the add re-runs. A lost race names both halves of its fix: re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
+A push that fails after the freeze splits in two. Losing the name to another region is the one case Monte cannot leave alone: it removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie. The refusal names both halves of the fix. Re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
+
+Every other push failure keeps the freeze. A dropped connection or a Ctrl-C took nothing from anyone, and prepare can be expensive to run again, so the Environment stays exactly as a keyless freeze would leave it: here, and nowhere else.
 
 The three forms differ in what the Environment can do:
 
@@ -187,7 +191,7 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 
 `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` has three scopes. Together they read as one progression, and `--available` and `--vault` refuse together, because each names a different place to look.
+`list` has three scopes. Together they read as one progression, and passing `--available` with `--vault` is a usage error that exits 2, because each names a different place to look.
 
 | Command | What it answers | What it reads |
 | --- | --- | --- |
@@ -216,7 +220,7 @@ monte dataset show <name> [--json]
 
 A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there as well, and then it refuses from any box in any region.
 
-A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Both checks read the Vault, so a freeze with no key for it runs neither.
+A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Both guards read this data root first and the Vault second, so a freeze with no key for the Vault still makes the local half of the check.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
