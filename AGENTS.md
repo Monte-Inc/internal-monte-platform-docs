@@ -18,7 +18,7 @@ Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — u
 - **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model, the Recipe, and the Source bind here.
 - **Source** — what a training Run trains on, stated on every train (`--source`): a trainable Environment's curriculum (its own or another's) or a frozen Dataset (sft only). Recorded on the row; rendered in the hop label `algorithm:source`.
 - **Dataset** (capital D) — a frozen, named pile of demonstration rows for sft (`monte dataset add`), with any overlap against frozen exams recorded at freeze. Never part of a Measurement's definition. The lowercase ban above still stands.
-- **Vault** (2026-08-18, ADR 0006) — the durable tier for frozen inputs: the cloud bucket holding every Environment and Dataset that `monte env add` and `monte dataset add` froze. Capitalize it, as `CONTEXT.md` does. It is the source of truth for them, and the copy under a data root is a **materialization** — never a Mirror, which means results only. There are two durable buckets now, so name the one you mean: write "the Vault" or "the results bucket", never "the durable tier". Applied across this site 2026-08-18.
+- **Vault** (2026-08-18, ADR 0006) — the cloud bucket that `monte env add` and `monte dataset add` push what they freeze to. Capitalize it, as `CONTEXT.md` does. It is the source of truth for what reached it, and the copy under a data root is a **materialization** — never a Mirror, which means results only. An add with no writable GCS key freezes locally and pushes nothing, and an Environment shipped as a package never enters the Vault at all, so "every frozen input is in the Vault" is not a claim to make. There are two cloud buckets now, so name the one you mean: write "the Vault" or "the results bucket". The old singular, "the durable tier", named one bucket back when there was one and no longer says which. Applied across this site 2026-08-18.
 - **Move** — one decision by the driving agent: a Checkpoint × a Source × a Recipe.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
 - **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by its move (`algorithm:source`); the Recipe stays on the row. Also derived. Checkpoints form a tree, not a line.
@@ -40,9 +40,14 @@ Lineage, it was missed and should be fixed.
 Keep this list short and delete entries as they land — a stale "coming soon"
 is worse than no note at all.
 
-- (empty — the checkpoint tree, `--parent`/`--from-base`, the `monte status`
-  tree render, and the source axis all shipped as of 2026-08-17. The
-  Concepts pages' branching content is now a description of built behavior.)
+- **The Vault** — `monte env list --vault`, `monte dataset list --vault`, the
+  push on `env add` / `dataset add`, and `monte env install` fetching from the
+  Vault all live on the platform's `vault-core` branch, not yet on its `main`.
+  This site describes them as built. Delete this entry when `vault-core`
+  merges, and do not merge the docs change before it.
+- (the checkpoint tree, `--parent`/`--from-base`, the `monte status` tree
+  render, and the source axis all shipped as of 2026-08-17. The Concepts
+  pages' branching content is now a description of built behavior.)
 
 ## Style preferences
 

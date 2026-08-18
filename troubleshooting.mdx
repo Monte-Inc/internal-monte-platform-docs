@@ -54,8 +54,10 @@ A mock-only Environment declares no Gym benchmarks, so it has nothing to run for
 Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy is wrong.
 
 - **The copy inside the Gym checkout**, the one Gym reads, is missing, stale, or was edited in place. This one usually surfaces at preflight rather than at install. Re-run `monte env install <name>` to write it again from the frozen files.
-- **The frozen file on the data root is missing** or unreadable here. The refusal names the fix: delete the Environment's directory on the data root, then run `monte env install <name>`. Delete first. Install decides by the manifest, so a directory that still holds one gets verified rather than refetched. With the directory gone, install pulls the whole thing from the Vault and proves every hash. The name and the fingerprint survive. Two cases never reach the Vault: a package you author, and an add that ran with no GCS key. For those the manifest still claims the name, so freezing it again under that name refuses. Add it under a new name with `monte env add --benchmark <benchmark> --as <name>`.
-- **The frozen file on the data root drifted** since it was pinned. The fix is the same, and so is its limit. Delete the directory, install again, and the Vault's copy comes back, which is the pinned one. What does not come back is the edit. Rows that changed after they were pinned are a different Measurement, and they can enter Monte again only under a new name.
+- **The frozen file on the data root is missing** or unreadable here. Check `monte env list --vault` first. The repair is a refetch, so it needs the Vault to hold this Environment.
+  - **It is in the Vault.** Delete the Environment's directory on the data root, then run `monte env install <name>`. The delete is the load-bearing half, because install decides by the manifest: a directory that still holds one gets verified, not refetched. With the directory gone, install pulls the whole thing and proves every hash. The name and the fingerprint survive.
+  - **It is not.** A package you author never enters the Vault, and neither does an add that ran with no GCS key. Delete nothing: the data root holds the only copy there is. Once bytes are gone they are gone, and the manifest still claims the name, so freezing it again under that name refuses. Add it under a new name with `monte env add --benchmark <benchmark> --as <name>`.
+- **The frozen file on the data root drifted** since it was pinned. Same repair and same precondition. If `monte env list --vault` shows this Environment, delete the directory and install again, and the pinned copy comes back. What does not come back is the edit. Rows that changed after they were pinned are a different Measurement, and they can enter Monte again only under a new name.
 
 Never regenerate frozen Splits on a box to repair them. A regenerated copy will not hash to what the manifest pins, so it refuses the same way.
 
@@ -65,9 +67,11 @@ Never regenerate frozen Splits on a box to repair them. A regenerated copy will 
 
 ### E_BOX or E_STORAGE: no credentials
 
-Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, and `env list --vault` need a GCS key and refuse without one. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, `env list --vault`, and `dataset list --vault` need a GCS key and refuse without one. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
 
-`env add` and `dataset add` are the exception. With no GCS key they still freeze, on this data root alone, and print a note saying nothing durable holds it. A key that resolves and then cannot write does refuse, and that refusal names a box as the place to freeze from.
+`env add` and `dataset add` are the exception. With no GCS key they still freeze, on this data root alone, and print a note saying nothing durable holds it. A key that resolves and then cannot write refuses, but only after the local freeze has happened: the frozen files are on this data root, the Vault holds nothing, and the refusal names a box as the place to freeze from.
+
+`monte dataset show` fetches from the Vault on a miss, and that fetch needs a key too. Without one it refuses as `E_NOT_FOUND`, the same as it would for a Dataset that never existed.
 
 ### Training preflight refuses: disk
 

@@ -169,7 +169,7 @@ monte env install --all
 
 `add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-an-environment-lives). That prepare is the only step in an Environment's life that reads a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. The name is claimed in the Vault, so an add that reached the Vault refuses from any box in any region.
 
-That push needs a GCS key that can write. The laptop key reads the Vault and cannot write it, so a freeze belongs on a box, and the refusal says so. With no GCS key at all the add still freezes, on this data root alone, and prints a note that nothing durable holds it. An Environment in that state is one you keep yourself.
+That push needs a GCS key that can write. The laptop key reads the Vault and cannot write it, so a freeze belongs on a box. The refusal says so, and it lands after the local freeze: the files are on this data root, the Vault holds nothing, and the name is still free there. With no GCS key at all the add freezes the same way and prints a note that nothing durable holds it. An Environment in that state is one you keep yourself.
 
 The three forms differ in what the Environment can do:
 
@@ -187,7 +187,7 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 
 | Command | What it answers | What it reads |
 | --- | --- | --- |
-| `monte env list --available` | what you could freeze | the Gym checkout |
+| `monte env list --available` | which benchmarks you could freeze | the Gym checkout |
 | `monte env list --vault` | what you have frozen | the Vault, over the network |
 | `monte env list` | what is usable here, now | local disk |
 
@@ -195,7 +195,9 @@ An Environment moves down that table through its life: it ships in Gym's catalog
 
 `install` puts the frozen files where Gym reads them. It decides by the manifest. No `manifest.json` on the data root means fetch the whole directory from the Vault and prove every hash before writing it. A manifest present means verify what is here and fetch nothing. It then registers the benchmark configs. Install is idempotent.
 
-Three things bound it. Fetching needs a GCS key, so a machine without one installs only what its data root already holds. `--all` reads the same local listing, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
+Three things bound it. Fetching needs a GCS key, so a machine without one installs only what its data root already holds. `--all` reads the same local listing, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
+
+Installing is what makes a Vault Environment usable at all. `--eval` and `--source` both resolve against the data root, so a name `list --vault` shows you is not a name `monte train` accepts until `install` has run. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
 ### monte dataset
 
@@ -206,7 +208,7 @@ monte dataset list [--vault] [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so an add that reached the Vault refuses that name from any box in any region.
+A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A name claimed in the Vault refuses from any box in any region.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
@@ -216,7 +218,7 @@ For a flat pile, `--input-key` names the prompt column and `--output-key` names 
 
 `list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the Vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk.
 
-A frozen Dataset lives in [the Vault](/concepts/environments#where-an-environment-lives), the same as an Environment. The copy on the data root is a materialization of it, and `show` is the command that fetches that copy back. Nothing else does: `monte train --source <name>` resolves against the data root alone, so run `monte dataset show <name>` first on a machine that has never held the rows.
+A frozen Dataset lives in [the Vault](/concepts/environments#where-an-environment-lives), the same as an Environment. The copy on the data root is a materialization of it, and `show` is the command that fetches that copy back. Nothing else does: `monte train --source <name>` resolves against the data root alone, so run `monte dataset show <name>` first on a machine that has never held the rows. That fetch needs a GCS key. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
 
 ### monte sync, push
 
