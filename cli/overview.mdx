@@ -72,7 +72,7 @@ That Cohort cannot recover. Once a Checkpoint exists, there is no way to go back
 
 Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. The fix is to run the command where the run directories live, which is the box.
 
-`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the results bucket, the cloud store that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](#remote-runs).
+`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the results bucket, the cloud bucket that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](#remote-runs).
 
 ### monte train
 
@@ -167,7 +167,7 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the vault](/concepts/environments#where-an-environment-lives). That prepare is the only step that reads a live source: every step after it moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. The vault holds the name, so it refuses from any box in any region.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the vault](/concepts/environments#where-an-environment-lives). That prepare is the only step in an Environment's life that reads a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. The vault holds the name, so it refuses from any box in any region.
 
 The three forms differ in what the Environment can do:
 
@@ -181,7 +181,7 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 
 `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` has three scopes, and they read as one progression.
+`list` has three scopes. Together they read as one progression.
 
 | Command | What it answers | What it reads |
 | --- | --- | --- |
@@ -189,9 +189,9 @@ A trainable Environment can be a `--source`. Both eval-only forms can be an expe
 | `monte env list --vault` | what you have frozen | the vault, over the network |
 | `monte env list` | what is usable here, now | local disk |
 
-An Environment moves down that table through its life: it ships in Gym's catalog, `env add` freezes it into the vault, and `env install` makes it usable here. Bare `list` prints each Environment, its kind, and its Gym benchmarks, and it stays local, instant, and safe with no network. That is why `--vault` is a flag: the same discovery path runs on every `monte` command, so the default must never reach the network.
+An Environment moves down that table through its life: it ships in Gym's catalog, `env add` freezes it into the vault, and `env install` brings it down to this machine. Bare `list` prints each Environment, its kind, and its Gym benchmarks. It stays local and instant, with no network call. That is why `--vault` is a flag. The same discovery path runs on every `monte` command, so the default must never reach the network.
 
-`install` makes a frozen Environment usable on this machine. When the data root does not hold the files, `install` fetches them from the vault and proves every hash before it writes them. When the data root does hold them, it verifies them where they are and fetches nothing. It then registers the benchmark configs. Install is idempotent. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
+`install` puts the frozen files where Gym reads them. When the data root does not hold them, `install` fetches them from the vault and proves every hash before it writes them. When the data root does hold them, it verifies them where they are and fetches nothing. It then registers the benchmark configs. Install is idempotent. A package you author brings its own `install()` hook, and that one does not read the vault. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
 ### monte dataset
 
@@ -202,7 +202,7 @@ monte dataset list [--vault] [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, records where the rows came from, and pushes the frozen rows to the vault. Frozen means frozen, so re-adding a name refuses from any box in any region.
+A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the vault. Frozen means frozen, so re-adding a name refuses from any box in any region.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
@@ -212,7 +212,7 @@ For a flat pile, `--input-key` names the prompt column and `--output-key` names 
 
 `list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk.
 
-A frozen Dataset lives in the vault, the same as an Environment. The copy on the data root is a materialization of it: a read that does not find it there fetches it from the vault and proves the hash first.
+A frozen Dataset lives in [the vault](/concepts/environments#where-an-environment-lives), the same as an Environment. The copy on the data root is a materialization of it. A read that does not find it there fetches it and proves the hash first.
 
 ### monte sync, push
 
@@ -221,7 +221,7 @@ monte sync [measurement...] [--bucket B] [--key-file PATH] [--json]
 monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
 ```
 
-`sync` and `push` are the two directions of the results bucket, the cloud store that outlives any box. It holds results only. Frozen Environments and Datasets live in the other bucket, [the vault](/concepts/environments#where-an-environment-lives), and `monte env` and `monte dataset` are what move those.
+`sync` and `push` are the two directions of the results bucket, the cloud bucket that outlives any box. It holds results only. Frozen Environments and Datasets live in [the vault](/concepts/environments#where-an-environment-lives), and `monte env` and `monte dataset` move those.
 
 `sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. A Mirror is a read-only local copy of the results, so you can read Ledger state with no box up. Weights never enter it. The bucket copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
 
@@ -241,7 +241,7 @@ Ephemeral Lambda GPU boxes, managed from your laptop.
 
 `up` looks for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box has been idle for 45 minutes, or once it passes its 12-hour hard TTL.
 
-The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data root attached, and `--cold` launches one without it. A cold box has no data root, so it has nowhere to read the Measurement from or write the Run's rows to, and it cannot serve a real Run. The vault holds frozen Environments and Datasets, not a Measurement's own files.
+The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data root attached, and `--cold` launches one without it. A cold box has no data root. It has nowhere to read the Measurement from or write the Run's rows to, so it cannot serve a real Run. The vault holds frozen Environments and Datasets, not a Measurement's own files.
 
 `--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a box you are working on interactively dies mid-session. The flag writes `/etc/monte/keep-alive` after arming the watchdog, which disables the idle check. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
 
@@ -264,7 +264,7 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 `monte eval --remote` and `monte train --remote` move one Run onto an ephemeral box and return. The flow is fixed:
 
 1. **The reproducibility gate.** Your working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
-2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box, because the Measurement it reads and the rows it writes live on the data root.
+2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box. The Measurement it reads and the rows it writes both live on the data root.
 3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
 4. **The credentials.** Written under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
 5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
