@@ -67,7 +67,7 @@ After the window closes, a finalizer runs a fixed sequence on the box.
 1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
 2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
 3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the Checkpoint Monte selects.
-4. **Push the claimed Checkpoint's weights** to the durable tier.
+4. **Push the claimed Checkpoint's weights** to Hugging Face, where weights live.
 5. **Sync**, which carries the results tree and the Improver's own transcript.
 6. **Release the box to idle**, rather than terminating it, since the box outlives the Envelope.
 
