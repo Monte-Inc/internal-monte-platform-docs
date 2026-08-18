@@ -61,7 +61,7 @@ Never regenerate frozen Splits on a box to repair them. A regenerated copy will 
 
 ### E_REMOTE: the tree is dirty or unpushed
 
-`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root, so it has nowhere to read the Measurement from or write the Run's rows to. The vault holds frozen Environments and Datasets, not a Measurement's own files.
+`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root, so it has nowhere to read the Measurement from or write the Run's rows to, and it cannot serve a real Run. The vault holds frozen Environments and Datasets, not a Measurement's own files.
 
 ### E_BOX or E_STORAGE: no credentials
 
