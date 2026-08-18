@@ -54,18 +54,20 @@ A mock-only Environment declares no Gym benchmarks, so it has nothing to run for
 Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy is wrong.
 
 - **The copy inside the Gym checkout**, the one Gym reads, is missing, stale, or was edited in place. This one usually surfaces at preflight rather than at install. Re-run `monte env install <name>` to write it again from the frozen files.
-- **The frozen file on the data root is missing** or unreadable here. Run `monte env install <name>`. The vault holds the frozen bytes, so install fetches them again and proves every hash before it writes them. The name and the fingerprint both stay what they were. If the vault does not hold this Environment either, the manifest still claims the name. Freezing it again under the same name refuses. Add it again under a new name with `monte env add --benchmark <benchmark> --as <name>`.
-- **The frozen file on the data root drifted** since it was pinned. Monte refuses rather than overwrite what is on your data root, because it cannot tell whether the edit or the pin is the mistake. There is no repair for the changed rows themselves. Rows that changed after they were pinned are a different Measurement, and they can enter Monte again only under a new name. If what you want is the pinned copy back, remove the local one and run `monte env install <name>`. That is the case above.
+- **The frozen file on the data root is missing** or unreadable here. The refusal names the fix: delete the Environment's directory on the data root, then run `monte env install <name>`. Delete first. Install decides by the manifest, so a directory that still holds one gets verified rather than refetched. With the directory gone, install pulls the whole thing from the Vault and proves every hash. The name and the fingerprint survive. Two cases never reach the Vault: a package you author, and an add that ran with no GCS key. For those the manifest still claims the name, so freezing it again under that name refuses. Add it under a new name with `monte env add --benchmark <benchmark> --as <name>`.
+- **The frozen file on the data root drifted** since it was pinned. The fix is the same, and so is its limit. Delete the directory, install again, and the Vault's copy comes back, which is the pinned one. What does not come back is the edit. Rows that changed after they were pinned are a different Measurement, and they can enter Monte again only under a new name.
 
 Never regenerate frozen Splits on a box to repair them. A regenerated copy will not hash to what the manifest pins, so it refuses the same way.
 
 ### E_REMOTE: the tree is dirty or unpushed
 
-`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root. It has nowhere to read the Measurement from or write the Run's rows to, so it cannot serve a real Run. The vault holds frozen Environments and Datasets, not a Measurement's own files.
+`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root. It has nowhere to read the Measurement from or write the Run's rows to, so it cannot serve a real Run. The Vault holds frozen Environments and Datasets, not a Measurement's own files.
 
 ### E_BOX or E_STORAGE: no credentials
 
-Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, and anything that reaches the vault need a GCS key. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, and `env list --vault` need a GCS key and refuse without one. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+
+`env add` and `dataset add` are the exception. With no GCS key they still freeze, on this data root alone, and print a note saying nothing durable holds it. A key that resolves and then cannot write does refuse, and that refusal names a box as the place to freeze from.
 
 ### Training preflight refuses: disk
 
