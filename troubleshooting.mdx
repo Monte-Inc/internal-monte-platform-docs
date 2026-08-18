@@ -51,21 +51,21 @@ A mock-only Environment declares no Gym benchmarks, so it has nothing to run for
 
 ### env install refuses: data does not match the manifest
 
-Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy drifted.
+Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy is wrong.
 
 - **The copy inside the Gym checkout**, the one Gym reads, is missing, stale, or was edited in place. This one usually surfaces at preflight rather than at install. Re-run `monte env install <name>` to write it again from the frozen files.
-- **The frozen file on the data root** is missing or unreadable here. The manifest still claims the name, so freezing it again under the same name refuses: add it again under a new name with `monte env add --benchmark <benchmark> --as <name>`.
-- **The frozen file on the data root** drifted since it was pinned. There is no repair for this one, because rows that changed after they were pinned are a different Measurement. Re-add them under a new name.
+- **The frozen file on the data root is missing** or unreadable here. Run `monte env install <name>`. The vault holds the frozen bytes, so install fetches them again and proves every hash before it writes them. The name and the fingerprint both stay what they were. If the vault does not hold this Environment either, the manifest still claims the name, so freezing it again under the same name refuses: add it again under a new name with `monte env add --benchmark <benchmark> --as <name>`.
+- **The frozen file on the data root drifted** since it was pinned. Monte refuses rather than overwrite what is on your data root, because it cannot tell whether the edit or the pin is the mistake. There is no repair for the changed rows themselves: rows that changed after they were pinned are a different Measurement, and they can only enter Monte again under a new name. If what you want is the pinned copy back, remove the local one and run `monte env install <name>`, which is the case above.
 
 Never regenerate frozen Splits on a box to repair them. A regenerated copy will not hash to what the manifest pins, so it refuses the same way.
 
 ### E_REMOTE: the tree is dirty or unpushed
 
-`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root attached, so it cannot serve a real Run.
+`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root, so it has nowhere to read the Measurement from or write the Run's rows to. The vault holds frozen Environments and Datasets, not a Measurement's own files.
 
 ### E_BOX or E_STORAGE: no credentials
 
-Both name the variable they wanted. `box` and `--remote` need a Lambda key, `sync` and `push` need a GCS key, and a real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, and anything that reaches the vault need a GCS key. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
 
 ### Training preflight refuses: disk
 

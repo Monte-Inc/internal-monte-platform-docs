@@ -34,7 +34,7 @@ An Environment is trainable when `splits()` returns a `train` key, and eval-only
 
 `demo` is mock-only: it declares no Gym benchmarks, so it has no real-execution half. A package that scores real models needs three more things, and no shipped package demonstrates them. The `math` worked example was deleted rather than kept half-current.
 
-- **Frozen data.** Real task data lives on the data root, never in the repo. You copy it there from a copy whose bytes already match the manifest, and you never derive it on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent.
+- **Frozen data.** Real task data never lives in the repo. You copy it onto the data root from a copy whose bytes already match the manifest, and you never derive it on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent. `monte env add` pushes what it freezes to [the vault](/concepts/environments#where-an-environment-lives), which is what makes a data root copy replaceable. A package you author is not pushed there, so hold your own durable copy of those bytes.
 - **The Gym rows file.** Each `*.gym.jsonl` file, re-derived from the frozen source through the current prompt renderer. These are the rows Gym reads.
 - **The resources server.** Your FastAPI grading app plus its configs, copied to a name-derived Gym path. Training and eval both grade through this one server.
 
