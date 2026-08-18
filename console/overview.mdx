@@ -23,13 +23,13 @@ The server reads `MONTE_ROOT` for the data root. The web app finds the server th
 MONTE_ROOT=~/monte-console-dev uv run python console/seed.py
 ```
 
-Seeding runs mock and lands in seconds. A second seed against the same root refuses, because a Measurement is frozen at init. Point `MONTE_ROOT` elsewhere or delete the directory.
+Seeding runs mock: it goes through the real CLI and writes real Ledger rows with fake scores, and it finishes in seconds. A second seed against the same root refuses, because a Measurement is frozen at init. Point `MONTE_ROOT` elsewhere or delete the directory.
 
 ## Pages
 
-- **Training** and **Evaluations**: the Measurements, each opening its Ledger table: Run rows with a score column, the Split each Run scored, and an Evidence toggle that hides smoke rows.
-- **Run detail**: the row in full, in tabs. Every Run has **Overview** (plan settings, base model, serving stack, checkpoint relations), **Logs** (live events), and **Config**. A training Run also gets **Metrics**.
-- **Per-task results**: every Trace of an eval Run with its score, expected answer, and extracted answer. The Trace drawer shows the prompt the model was given.
+- **Training** and **Evaluations**: the Measurements, each opening its Ledger table: Run rows with a score column, the Split each Run scored, and an Evidence toggle that hides smoke rows, the rehearsal Runs that never count as evidence.
+- **Run detail**: the row in full, in tabs. Every Run has **Overview**, **Logs** (live events), and **Config**. **Config** shows the base model, the serving stack, the Checkpoint the Run started from or scored, and the Run plan's eval and train settings. An eval Run's **Overview** is the per-task table. A training Run also gets a **Metrics** tab, and its **Overview** shows the pinned charts and a step-by-step reward table.
+- **Per-task results**: one row per Trace of an eval Run, with columns for task id, score, tokens in, and tokens out. Click a task to open the Trace drawer, which shows the expected and extracted answers next to the prompt the model was given and the response it produced.
 - **Environments**: a task browser for each installed Environment.
 
 ## The Metrics tab
@@ -38,9 +38,9 @@ A training Run's Metrics tab holds every per-step metric the trainer recorded, n
 
 The numbers come from the trainer's own TensorBoard event files, read live on each request. The Ledger keeps reward only, and only as an aggregate, so this tab is the one place the rest of a Run's numbers exist. That also means the metrics are as reachable as the event files: a Run whose files are not on this machine shows nothing.
 
-Around 88 tags is a wall, so the panel groups them into collapsible families and opens the pinned ones by default. The Overview tab repeats the pinned charts and a step-by-step reward table.
+Around 88 metrics is too many to read at once, so the panel groups them into collapsible families and opens the pinned ones by default. The Overview tab repeats the pinned charts and a step-by-step reward table.
 
 ## Current limits
 
-- Per-task results are not paginated server-side. The whole Split ships in one response and the table pages through it after it arrives.
+- Per-task results are not paginated server-side. The server sends the whole Split's results in one response, and the table pages through them after they arrive.
 - There is no archive or delete, and no search or sort on the Ledger table. The Evidence toggle is the only filter there, and it appears only when the Measurement has smoke rows to hide. A hidden row is still in the Ledger and still addressable.

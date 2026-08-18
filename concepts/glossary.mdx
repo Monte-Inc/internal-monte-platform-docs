@@ -10,20 +10,22 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 
 | Term | Meaning |
 | --- | --- |
-| **Environment** | The graded world an agent acts on: the tasks, the grader, and any tools and per-task state. See [Environments](/concepts/environments). |
+| **Environment** | The graded world an agent acts on: the Tasks, the grader, and any tools and per-task state. See [Environments](/concepts/environments). |
 | **Task** | One problem for the model, plus the data needed to score an attempt at it. |
+| **Curriculum** | A trainable Environment's own training Tasks, scored live by that Environment's grader as the model attempts them. A frozen Dataset is the other thing a Run can train on, and neither one is ever called by the other's name. |
 | **Rollout** | One attempt at one Task, from prompt through to a graded reward. |
 | **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
-| **Split** | A frozen list of Task IDs. A trainable Measurement owns `train`, `dev`, and `test`. An eval-only one owns `dev` alone. |
+| **Split** | A frozen list of Task IDs. A Measurement over a trainable Environment owns `train`, `dev`, and `test`. A Measurement over an eval-only Environment owns `dev` alone when that Environment was frozen from one benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim. |
 
 ## What gets frozen
 
 | Term | Meaning |
 | --- | --- |
 | **Measurement** | A frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. See [Measurement](/concepts/measurement). |
-| **Fingerprint** | A hash over the Environment's frozen material: the tasks, the grader, the harness configuration, and for a trainable Environment its training data. A Run is refused when any of it has moved. |
-| **Dataset** | A frozen, named pile of demonstration rows for supervised fine-tuning. Any overlap with frozen exams is recorded when it is frozen. Never part of a Measurement. |
-| **Baseline** | The base model's score before any training, written as `eval@0`. Every later score in the same Cohort is read against it. |
+| **Fingerprint** | A hash over the Environment's frozen material: the Tasks, the grader, the harness configuration, and for a trainable Environment its training data. A Run is refused when any of it has changed. |
+| **Comparability config** | The two things hashed together to decide whether two Runs can be compared: the Environment's fingerprint and the frozen eval settings. The base model stays outside it, because it is the other half of the Cohort key. Train settings stay outside it too, because a Baseline is taken before any training and no training setting can affect it. |
+| **Dataset** | A frozen, named pile of demonstration rows for supervised fine-tuning. Any overlap with frozen exams is recorded when it is frozen. Never part of a Measurement. Monte uses this word for that frozen pile only: an Environment's own task material is never called a dataset. |
+| **Baseline** | The base model's score before any training. In an experiment it is two scores taken at that same point: `eval@0` on `dev`, and `test@0` from a separate `monte eval <measurement> --split test` you run yourself before any training. Every later score in the same Cohort is read against it. |
 
 ## What runs
 
@@ -32,10 +34,14 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Run** | One execution recorded as a row. Either a training Run, which produces a Checkpoint, or an eval Run, which scores one. |
 | **`train@N` / `eval@N`** | N is the Checkpoint's absolute step count, never a run index. The training Run ending at step 50 is `train@50`, and `eval@50` scores what it produced. |
 | **Checkpoint** | The model's saved state at one step. |
+| **Smoke Run** | A capped rehearsal Run, started with `--smoke`, that never counts as evidence: it cannot be a Baseline, a parent, or a promote source, and it never spends a `test` read. A smoke train runs 3 steps. Its row still stays in the Ledger. |
+| **Mock Run** | A Run that goes through the real CLI and writes a real Ledger row, with a fake score in place of real execution. Off a GPU box every Run is a mock Run. On a machine that has a GPU but no stack installed, Monte refuses rather than record a mock score silently. |
+| **Preflight** | The checks Monte runs before a Run starts, such as the lock probe, the Environment fingerprint recompute, and free disk. A failed preflight refuses the Run with `E_PREFLIGHT` (exit code 6). |
 | **Servable folder** | The weights and tokenizer directory an inference server can load, in Hugging Face layout. |
 | **Load-check** | One prompt pushed through a real serving stack to prove a servable folder actually serves. It is not a score and not a Run. |
-| **Recipe** | The named file stating how a training Run trains: model shape, algorithm, batch geometry, optimizer. See [Training](/concepts/training#recipes). |
-| **Source** | What a training Run trains on, stated on every train: a trainable Environment's curriculum, or a frozen Dataset under an sft Recipe. Recorded on the row. |
+| **Recipe** | The named file stating how a training Run trains: model shape, algorithm, the batch settings, optimizer. See [Training](/concepts/training#recipes). |
+| **Source** | What a training Run trains on, stated on every train: a trainable Environment's curriculum (its own training Tasks, graded live), or a frozen Dataset under an sft Recipe. Recorded on the row. |
+| **Move** | One decision: which Checkpoint to start from, which Source to train on, and which Recipe to run. `monte status` renders it in each hop label as `algorithm:source`. |
 | **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
 
 ## What is derived
@@ -43,15 +49,21 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | Term | Meaning |
 | --- | --- |
 | **Cohort** | The Runs sharing a base model and comparability config: the set within which a number means something. Each one needs its own Baseline, and a delta never crosses from one Cohort into another. |
-| **Lineage** | A Checkpoint's descent path back to the base model, with every hop labelled by its move: the algorithm and the Source it trained on. Checkpoints form a tree, so one Cohort can hold several Lineages. See [Improvement](/concepts/improvement). |
-| **The claim** | The `test` score of the Checkpoint the tool selected. `test` is read exactly twice per Cohort, at the Baseline and here. |
-| **Promoting** | Exporting a claimed Checkpoint's servable folder as a checksum-verified copy, behind a confirmation you type out in full. |
+| **Lineage** | A Checkpoint's descent path back to the base model, with every hop labelled by its Move: the algorithm and the Source it trained on. Checkpoints form a tree, so one Cohort can hold several Lineages. See [Improvement](/concepts/improvement). |
+| **Hop** | One arrow in a Lineage: the training Run that took one Checkpoint to the next. |
+| **Stage boundary** | A hop where the Recipe changes. The new Run starts from the parent Checkpoint's weights alone, the trainer's step counter restarts there, the KL anchor moves to that Checkpoint, and `monte status` draws the hop with a double-shaft arrow. |
+| **Delta** | The difference between a Run's score and its Baseline's score, inside one Cohort. |
+| **Paired** | Both evals scored the same frozen Tasks, so Monte compares them Task by Task and counts the flips. `fixed` is a Task the Baseline got wrong and this Run got right, `broken` is the reverse, and Tasks that came out the same way both times cancel. The delta is `(fixed - broken) / n`, the same number the two scores give on their own. Pairing changes only the interval printed beside it, which is usually, though not always, tighter. |
+| **Cycle** | The first admissible eval at a new highest step along one Lineage, printed by `monte status` under `cycles:`. It is keyed on the path, so a retry at the same step is not a new Cycle, and two branches off one Checkpoint each get their own. |
+| **Strike** | A Cycle's verdict, printed as `STRIKE`, meaning the paired `dev` delta against the Baseline is not significantly positive. A significant regression counts as a strike too, since it is no improvement either. Strikes are labels you read: nothing adds them up into a stop, and you decide when the loop ends. |
+| **The claim** | The `test` score of the Checkpoint Monte selects, which is the one with the highest paired `dev` delta over the Baseline. That selection refuses unless every candidate's per-task file can be read, because picking the best of the readable ones could miss the real winner. `test` is read exactly twice per Cohort, and the first read is one you run yourself on the base model before any training. Skip it and Monte refuses the claim in that Cohort permanently. |
+| **Promoting** | Exporting a Checkpoint's servable folder as a checksum-verified copy, with the provenance of the Run that wrote it, behind a confirmation you type out in full. Monte checks that the Run is a succeeded training Run that counts as evidence. It does not check that the Checkpoint carries a claim. |
 
 ## The record
 
 | Term | Meaning |
 | --- | --- |
-| **Ledger** | The append-only, per-Measurement record of Runs: what happened, in what order, with what score. Every surface reads it through one API rather than touching the files. |
+| **Ledger** | The append-only, per-Measurement record of Runs: what happened, in what order, with what score. The CLI and the Console read it through one API rather than touching the files. |
 | **Trace** | One Run's attempt at one Task: the rollout verbatim, plus the grader's own fields. |
 | **Provenance** | The hashes carried on every row, covering the code, the configuration, the Splits, the comparability config, and the container image. |
 

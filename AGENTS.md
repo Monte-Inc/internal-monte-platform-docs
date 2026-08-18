@@ -12,7 +12,7 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **experiment** (lowercase) — a Measurement over a trainable Environment: one training story whose evidence is self-contained. The CLI verb is `monte experiment init`. Its counterpart is a **yardstick**: a Measurement over an eval-only Environment, a long-lived reference any model can be measured against. Capital-E **Experiment** (a grouping above Measurements) stays RESERVED and unimplemented — do not document that one as usable.
+- **experiment** (lowercase) — a Measurement over a trainable Environment: one training story whose evidence is self-contained. The CLI verb is `monte experiment init`. Its counterpart is a Measurement over an eval-only Environment: a long-lived reference any model can be measured against. The platform's `CONTEXT.md` calls that a **yardstick**, but this site does not use the word — write "an eval-only Measurement" instead. Capital-E **Experiment** (a grouping above Measurements) stays RESERVED and unimplemented — do not document that one as usable.
 - **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
 - **Environment** — a pluggable graded task package. Never "dataset" (see Dataset below — a different thing).
 - **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model, the Recipe, and the Source bind here.
