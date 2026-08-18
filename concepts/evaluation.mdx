@@ -6,7 +6,7 @@ An evaluation runs a model on a set of tasks, scores what comes back, and report
 
 When you fine-tune a model on new data, or add a tool to its agent harness, you expect it to do the work better. The change on its own does not confirm that. An evaluation is how you find out objectively: it puts a number on the model's performance, so you can say whether the change measurably improved it and by how much.
 
-That only holds if the two numbers you compare were produced the same way. If the tasks, the sampling rules, or the grader moved between them, the difference could have come from any of those rather than from the model, and the comparison no longer says anything about the change you made. A standardized evaluation removes that doubt, which is why every evaluation in Monte runs against a fixed [Measurement](/concepts/measurement).
+That only holds if the two numbers you compare were produced the same way. If the tasks, the sampling rules, or the grader changed between them, the difference could have come from any of those rather than from the model, and the comparison no longer says anything about the change you made. A standardized evaluation removes that doubt, which is why every evaluation in Monte runs against a fixed [Measurement](/concepts/measurement).
 
 ## Model capability or agent capability
 
@@ -31,7 +31,7 @@ Changing the harness changes the fingerprint, which makes a different Measuremen
 
 **Repeats.** One attempt per task is noisy. More attempts separate a real gain from variance. The Measurement fixes the number of attempts in its eval settings, so it cannot drift between Runs.
 
-**Reproducibility.** The same input has to return the same score. The fingerprint hashes the Environment's frozen material — the tasks, the grader, and the harness configuration — and Monte refuses a Run when any of it moved.
+**Reproducibility.** The same Run has to be scored under the same conditions every time. The fingerprint hashes the Environment's frozen material: the tasks, the grader, and the harness configuration. Monte refuses a Run when any of it changed.
 
 ## Related pages
 
