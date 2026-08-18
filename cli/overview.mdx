@@ -28,7 +28,7 @@ Three groups, and a command run from the wrong group is the most common source o
 
 `--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
 
-`env install` is the exception in the first row. It registers into the NeMo Gym checkout, so it needs a machine whose `MONTE_LOCAL` holds the stack.
+The first row has a precondition the others do not. `env add`, `env list --available`, and `env install` all read or write the NeMo Gym checkout, so they need a machine whose `MONTE_LOCAL` holds the stack. Installing a mock-only Environment is the exception, because it has nothing to register.
 
 ## Commands
 
@@ -169,11 +169,11 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). Prepare and, for `--server`, the training data it downloads with your Hugging Face token are the only steps in an Environment's life that read a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there too, and then re-adding it refuses from any box in any region. A freeze with no such key checks this data root alone.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). Prepare and, for `--server`, the training data it downloads with your Hugging Face token are the only steps in an Environment's life that read a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. A freeze that can write the Vault claims the name there too, and then re-adding it refuses from any box in any region. A freeze that cannot checks this data root alone. Resolving a key is not the same as being able to write with one, which is why the next paragraph is about the difference.
 
 That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then the ordinary ladder. A laptop's ordinary key is read-only on the Vault, so a laptop needs one of those two set to push at all.
 
-`add` checks for that key before it runs prepare, because prepare downloads from live sources and a 403 found later throws the whole freeze away. No writable key is not a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have the key, after moving the local copy out of the data root: the name is claimed there, and an add refuses a name it already holds. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Measurement.
+`add` probes whether that key can actually write before it runs prepare, because prepare downloads from live sources and finding out afterwards would mean paying for it with nothing to show. A key that resolves and cannot write reads the same as no key here. Neither is a refusal. The freeze happens on this data root alone, and the note says so and names the key. Freeze again as soon as you have the key, after moving the local copy out of the data root: the name is claimed there, and an add refuses a name it already holds. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Measurement.
 
 A push that fails after the freeze splits in two. Losing the name to another region is the one case Monte cannot leave alone: it removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie. The refusal names both halves of the fix. Re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
 
@@ -205,7 +205,7 @@ An Environment moves down that table through its life: it ships in Gym's catalog
 
 Three things bound the fetch. It needs a key for reading, so a machine without one installs only what its data root already holds. `--all` builds its list the way bare `monte env list` does, from local disk, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
 
-Registering is bounded too, with or without a Vault: it writes into the NeMo Gym checkout, so `install` refuses on a machine whose `MONTE_LOCAL` has no stack.
+Registering is bounded too, with or without a Vault: it writes into the NeMo Gym checkout, so `install` refuses on a machine whose `MONTE_LOCAL` has no stack. A mock-only Environment never gets that far, which is why it installs anywhere.
 
 Installing is what makes a Vault Environment usable at all. `--eval` and `--source` both resolve against the data root, so a name `list --vault` shows you is not a name `monte train` accepts until `install` has run. With no key for reading, `install` on a name this data root has never held refuses as `E_NOT_FOUND`, which reads like an Environment that does not exist. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
@@ -220,7 +220,7 @@ monte dataset show <name> [--json]
 
 A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. A freeze that resolved a key for the Vault claims the name there as well, and then it refuses from any box in any region.
 
-A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Both guards read this data root first and the Vault second, so a freeze with no key for the Vault still makes the local half of the check.
+A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Neither guard needs a key to do its local half, so a freeze that cannot reach the Vault still refuses a name this data root already holds. They differ in order: `env add --server` reads local disk first, and `dataset add` asks the Vault first.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
@@ -323,6 +323,7 @@ Credentials. Each one resolves from a direct value first, then from 1Password. M
 | `MONTE_HF_ORG` | Hugging Face org the weights repos live under | `monte-inc` |
 | `MONTE_OP_ACCOUNT` | 1Password account for every `op` lookup above | unset |
 | `MONTE_OP_VAULT` | 1Password vault for every `op` lookup above | unset |
+| `MONTE_VAULT_BUCKET` | the Vault bucket every Vault read and write addresses, for pointing at a staging one. Provisioning reads the same variable | `monte-platform-vault` |
 
 Box provisioning:
 
@@ -330,7 +331,6 @@ Box provisioning:
 |---|---|---|
 | `MONTE_SSH_KEY_NAME` | account SSH key name, needed when the account has several | unset |
 | `MONTE_NFS_NAME` | the NFS a warm box attaches | `monte-post-training` |
-| `MONTE_VAULT_BUCKET` | the Vault bucket to read and write, for a staging one. Provisioning and the runtime read the same variable | `monte-platform-vault` |
 | `MONTE_STATE_DIR` | directory holding the box identity file | `~/.monte` |
 
 ## Exit codes
@@ -355,5 +355,6 @@ Box provisioning:
 | 14 | `E_STORAGE` | a cloud bucket is unreachable in either direction: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
 | 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
+| 17 | `E_ENVELOPE` | the action falls outside an active Envelope's approved terms |
 
-Codes 3 through 16 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
+Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.

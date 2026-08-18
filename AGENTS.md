@@ -42,17 +42,11 @@ is worse than no note at all.
 
 - **The Vault** — `monte env list --vault`, `monte dataset list --vault`, the
   push on `env add` / `dataset add`, the Vault fetch inside `monte env install`
-  and `monte dataset show`, and the read-write key ladder that `push`,
-  `--push` and a freeze resolve, all live on the platform's `vault-core` branch, not yet on its `main`.
-  This site describes them as built, and was verified against `vault-core` at
-  `6f8bc37`, the commit that branch settled on.
-  Delete this entry when `vault-core` merges, and do not merge the docs
-  change before it.
-
-(The checkpoint tree, `--parent`/`--from-base`, the `monte status` tree
-render, and the source axis all shipped as of 2026-08-17, and their entries
-were deleted then. The Concepts pages' branching content is a description of
-built behavior.)
+  and `monte dataset show`, and the read-write key ladder that `push`, `--push`
+  and a freeze resolve all live on the platform's `vault-core` branch, not yet
+  on its `main`. This site describes them as built, and was verified against
+  `vault-core` at `6f8bc37`, the commit that branch settled on. Delete this
+  entry when `vault-core` merges, and do not merge the docs change before it.
 
 ## Style preferences
 
