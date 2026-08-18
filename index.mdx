@@ -3,7 +3,7 @@ title: "Introduction"
 description: "What Monte is and why it exists"
 ---
 
-Monte is an agent-native platform for improving agents: an agent drives the whole post-training loop — train, evaluate, compare — against a record built for comparison.
+Monte runs the post-training loop: train, evaluate, compare. It records the conditions every Run ran under, and a driving agent works the loop from that record.
 
 AI agents can handle individual tasks in LLM post-training research. They can change a Recipe, launch a Run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
 
@@ -11,7 +11,7 @@ An agent can become anchored to an early diagnosis and keep working from it afte
 
 Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to revisit decisions and choose what to try next.
 
-Monte is opinionated about what must be known for a comparison to mean something. It remains open about the training method and research strategy.
+Monte fixes what must be known for a comparison to mean something. Runs that share one base model, one frozen Environment, and one set of eval settings form a Cohort. Each Cohort gets its own Baseline, and a delta never crosses from one Cohort into another. Monte does not constrain the training method or the research strategy.
 
 <Note>
   Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
@@ -19,11 +19,11 @@ Monte is opinionated about what must be known for a comparison to mean something
 
 ## How it works
 
-Monte is an abstraction layer over the training lifecycle. It holds what each training Run did, what each eval scored, and how a model performs on a given task.
+Monte holds what each training Run did, what each eval scored, and how a model performs on a given Task.
 
-An Environment is the standard object that carries what you need to score that task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte experiment init` creates a Measurement and fixes which Tasks you score and how you score them.
+An Environment carries what you need to score a Task: the Tasks, their answers, and the grader. One Environment can carry several Measurements. `monte experiment init` creates a Measurement and fixes which Tasks you score and how you score them. The CLI spells the verb `experiment`, and these docs call the object it creates a Measurement. An experiment is a Measurement over a trainable Environment, one whose tasks you can also train on. A Measurement over an eval-only Environment is an eval-only Measurement, a fixed reference any model can be scored against.
 
-A Measurement starts from a base model, which can be any model. Monte scores it first to set the Baseline, then you train and score each new Checkpoint against it. A Recipe states how a Run trains: the algorithm, the optimizer, the batch geometry, and how it is distributed across GPUs. Each Run records the Recipe it ran and the Source it trained on, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in a single standard format. You can see from them which settings to change next.
+A Measurement starts from a base model, which can be any model. You score that base model twice before any training: on the `dev` Split, which sets the Baseline, and on the `test` Split, which anchors the final claim. Then you train and score each new Checkpoint against the Baseline. A Recipe states how a Run trains: the algorithm, the optimizer, the batch settings, and how it is distributed across GPUs. Each Run records the Recipe it ran and the Source it trained on, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in the same shape for every Run. You can see from them which settings to change next.
 
 Everything in the box below happens under one Measurement.
 
@@ -57,7 +57,7 @@ flowchart TD
     classDef none fill:#1E2024,stroke:#4A4D50,stroke-width:1.5px,color:#F0F1F2;
 ```
 
-The final eval on the test Split decides whether you can promote the model. Every Run, score, and cost lands in that same standard format. An agent reads that record, runs the loop, and decides what to try next.
+The test Split is read twice: once on the base model before any training, and once on the Checkpoint Monte selects at the end. The final eval on the test Split is the number you report. `monte promote` copies a Checkpoint's weights out with its provenance, behind a confirmation you type in full. Every Run, score, and cost is recorded in that same shape. The driving agent reads that record, runs the loop, and decides what to try next.
 
 ## Start here
 

@@ -26,13 +26,13 @@ Because the model learns from attempts it generated itself, it trains on its own
 
 Distillation trains a smaller model to reproduce the behavior of a larger one that already does the task well. The larger model is the teacher, the smaller one is the student, and the signal comes from the teacher's own outputs. You need neither written demonstrations nor a grader, only a teacher worth copying and prompts to run it on.
 
-The straightforward version trains the student on text the teacher generated, which is supervised fine-tuning with a model supplying the examples. It inherits the same distribution shift, because the student still only ever sees the teacher's trajectories. [On-policy distillation](https://arxiv.org/abs/2306.13649) avoids that by having the student generate the attempts and the teacher score them, so the feedback lands on the states the student actually reaches.
+The straightforward version trains the student on text the teacher generated, which is supervised fine-tuning with a model supplying the examples. It inherits the same distribution shift, because the student still only ever sees the teacher's attempts. [On-policy distillation](https://arxiv.org/abs/2306.13649) avoids that by having the student generate the attempts and the teacher score them, so the feedback lands on the states the student actually reaches.
 
 The teacher can also give feedback on every token, whereas a grader returns one number for a finished attempt. That denser signal is why on-policy distillation can reach a similar result for [less compute than reinforcement learning](https://thinkingmachines.ai/blog/on-policy-distillation/).
 
 ## Recipes
 
-Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. The Recipe states how a Run trains; what it trains on is stated separately, as the Run's Source. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of moves that produced it.
+Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. The Recipe states how a Run trains; what it trains on is stated separately, as the Run's Source. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of Moves that produced it.
 
 ## Related pages
 
