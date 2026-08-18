@@ -79,7 +79,7 @@ A fetch with no read key refuses as `E_NOT_FOUND` rather than as a credentials p
 
 Freeze again as soon as you have the key. Move the local copy out of the data root first, because the name is claimed there and an add refuses a name it already holds. The note prints `rm -rf` for that step. Moving does the same job and keeps the bytes until the new freeze has proven itself. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists, a re-freeze is a different Measurement and the moment has passed.
 
-A freeze with no key for the Vault also checks this data root alone for the name, so a name another region already claimed is not refused here until a freeze can reach the Vault.
+The name is still claimed against the Vault. Checking a claim is a read, and a read-only key can read, so a name another region already froze refuses here even though this machine could not have pushed it. Only a machine with no resolvable GCS key at all checks this data root alone, and that is the one case where two regions can end up holding different bytes under one name.
 
 ### An add failed after it froze
 
