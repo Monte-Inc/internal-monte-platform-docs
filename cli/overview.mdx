@@ -7,12 +7,12 @@ The `monte` CLI is the only write path into the platform. This page states the c
 
 ## Conventions
 
-- **Default subverb.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, and `box` groups have no default on purpose. Their subcommands are different intents.
+- **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, and `box` groups have no default on purpose. Their subcommands are different intents.
 - **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the Run persists, and its hash lands in the row as `config_hash`.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
-- **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
-- **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the writing Run's ULID and `<step>` is absolute. `monte status` prints both halves. Aliases do not resolve here, because two arms can hold one step.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint ladder that the human view prints.
+- **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every Run, and `monte status` prints it. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
+- **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
@@ -40,7 +40,7 @@ Creates the Measurement: freezes the Splits, the eval settings, and the Environm
 
 `--eval` names the Environment whose exams define this experiment. Its dev and test Splits and its grader produce every score the Ledger holds. An eval-only Environment is a valid `--eval`, and the experiment can still train: the training data is a separate axis, stated per Run.
 
-No Recipe is frozen here. The training method belongs to the move, not to the experiment, so `monte train` states it every time.
+No Recipe is frozen here. The training method belongs to the Move, not to the experiment, so `monte train` states it every time.
 
 ### monte eval
 
@@ -50,11 +50,29 @@ monte eval <measurement> [--model M] [--split dev|test]
                          [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
-Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none. A test eval has a budget: the Baseline and the final claim only.
+Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none.
 
-`--step N` scores the Checkpoint at that absolute step. It refuses when two arms of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the arm exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is tool-selected. A `--smoke` run is exempt, because it decides nothing.
+**The test Split gets two reads per Cohort, and you spend the first one yourself.** Run this on the base model, before any training:
 
-`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the durable tier after each transition, and is what the box job itself runs with. See [Remote runs](#remote-runs).
+```bash
+monte eval <measurement> --split test
+```
+
+The default Split is dev, so the Baseline eval alone never touches test. The command above is what records `test@0`, the score the final claim is later measured against. The second read is the final claim itself, after training.
+
+If you train first and then ask for a Checkpoint's test score, Monte refuses with `E_PREFLIGHT`:
+
+```
+E_PREFLIGHT: this cohort has no test baseline (test@0), so a checkpoint test eval would spend the final touch with nothing to pair against — the test delta would be forfeit forever
+```
+
+That Cohort cannot recover. Once a Checkpoint exists, there is no way to go back and score the base model on test, and spending the one remaining read would produce a number with nothing to compare it to. Start a new Cohort and take both Baselines before you train.
+
+`--step N` scores the Checkpoint at that absolute step. It refuses when two branches of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the branch exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is chosen by Monte, not by you. A `--smoke` run is exempt from that last rule, because it decides nothing.
+
+Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. The fix is to run the command where the run directories live, which is the box.
+
+`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the durable tier, the cloud results bucket that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](#remote-runs).
 
 ### monte train
 
@@ -65,20 +83,20 @@ monte train <measurement> --recipe <name|path> --source <name>
                           [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
-Trains one 50-step chunk. Refuses without a matching-Cohort Baseline (`E_NO_BASELINE`). A real chunk states three things, and the CLI infers none of them.
+Trains one chunk: 50 steps by default, set by the Measurement's `steps_per_chunk` train setting. A Recipe cannot change it, because that step count is what `train@N` means. Refuses without a matching-Cohort Baseline (`E_NO_BASELINE`). A real chunk states three things, and the CLI infers none of them.
 
 **`--recipe` is the method, per Run.** It takes a packaged or repo Recipe name, or a path to a YAML file. `monte config` lists the resolvable names and the search path. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan.
 
-**`--source` is the training diet.** It names what this Run trains ON: a trainable Environment's curriculum, or a frozen [Dataset](#monte-dataset). This experiment's own Environment is a source like any other, and you state it like any other. The namespace is every trainable Environment plus every frozen Dataset on the data root. One name claimed by both refuses.
+**`--source` is what this Run trains on.** It names either a trainable Environment's curriculum, or a frozen [Dataset](#monte-dataset). This experiment's own Environment is a source like any other, and you state it like any other. The namespace is every trainable Environment plus every frozen Dataset on the data root. One name claimed by both refuses.
 
 The algorithm and the source must agree. A `grpo` or `distillation` Recipe reads its reward from a trainable Environment's Gym resources server as it trains, so it takes an Environment. An `sft` Recipe consumes demonstrations with no grader running, so it takes a Dataset frozen with `--kind sft`. A crossed pairing refuses, and the refusal names the fix.
 
-**`--parent` or `--from-base` is the starting point.** `--parent <run>/<step>` continues that exact Checkpoint. `--from-base` opens a fresh arm from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
+**`--parent` or `--from-base` is the starting point.** `--parent <run>/<step>` continues that exact Checkpoint. `--from-base` opens a fresh branch from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
 
 Two rules govern a continuation:
 
 - A `--parent` whose Recipe differs from this Run's is a **stage boundary**. It is a weights-only warm start: the Run stages the parent's servable weights, the trainer's step counter restarts, and the KL anchor moves to the parent Checkpoint. The optimizer and dataloader state belong to the parent's method, so the new Run does not restore them.
-- A same-Recipe continuation **keeps its parent's `--source`**. It restores the parent's optimizer and dataloader state, and that state indexes the parent's rows file. A different diet refuses. To change the diet, start a fresh arm with `--from-base`, or cross a stage boundary.
+- A same-Recipe continuation **keeps its parent's `--source`**. It restores the parent's optimizer and dataloader state, and that state indexes the parent's rows file. A different source refuses. To change the source, start a fresh branch with `--from-base`, or cross a stage boundary.
 
 `--smoke` runs a 3-step micro-chunk that is never evidence. It cannot be a Baseline, a parent, or a promote source.
 
@@ -92,9 +110,15 @@ Two rules govern a continuation:
 monte status <measurement> [--json]
 ```
 
-Prints the Run rows, the per-Cohort delta lines, the checkpoint tree, the Cycles with their strike verdicts, and the checkpoint ladder. It pairs a delta line when the per-task files allow it, and labels the line unpaired when they do not.
+Prints the Run rows, the per-Cohort delta lines, the `lineage:` lines, the `cycles:` line with its strike verdicts, and the checkpoint list under `checkpoints:`.
 
-The tree prints one line per descent path, as a start point followed by one arrow per training Run:
+**What a Cycle is.** A Cycle is one turn of the loop: the first admissible eval at a new highest step along one Lineage. A retry at the same step is not a new Cycle, and two branches off one Checkpoint each get their own, because a Cycle is keyed on the path and not on the Cohort.
+
+**What a strike is.** Each Cycle carries a verdict. `STRIKE` means the paired dev delta against the Baseline is not significantly positive. `ok` means it is. A regression large enough to be significant is also a strike, because it is not an improvement either. A Cycle whose per-task files cannot be read prints neither verdict: it exists, but it is unjudged. Strikes are labels you read, not a countdown. Nothing adds them up, no number of them ends anything, and you decide when to stop.
+
+**What paired means.** A delta line is paired when Monte can read the per-task results files of both evals, and it is labelled unpaired when it cannot. Both evals scored the same frozen tasks, so Monte compares them task by task and counts the flips. A task the Baseline got wrong and the newer eval got right counts as `fixed`. The reverse counts as `broken`. Tasks that came out the same way both times cancel. The delta is `(fixed - broken) / n`, where `n` is the number of tasks scored, and that is the same number you get by subtracting the two scores. Pairing does not change the delta. What counting the flips buys is the interval printed beside it, which is usually, though not always, tighter than one computed without pairing.
+
+Each `lineage:` line prints one descent path, as a start point followed by one arrow per training Run:
 
 ```
 lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
@@ -103,12 +127,13 @@ lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
 
 Read the line as follows:
 
-- A hop label is `algorithm:source`, the move that hop made. It comes from the Run's own plan.
+- A hop label is `algorithm:source`, the Move that hop made. It comes from the Run's own plan.
 - A single-shaft arrow `-label->` is a continuation. The number after it is the absolute step the hop ended on.
-- A double-shaft arrow `=label(+N)=>` is a stage boundary. `+N` is the length of the segment it opened.
+- A double-shaft arrow `=label(+N)=>` is a stage boundary. `+N` is how many steps that hop trained after the boundary.
 - A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate Checkpoint.
 - A path that starts `base` trained from the base model.
 - A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
+- `ADR 0002` in the legend points at an internal platform decision record that this site does not publish. You do not need it to read the line. A stage boundary is a Recipe change that starts from the parent Checkpoint's weights alone.
 
 The legend prints only when the path crosses a stage boundary.
 
@@ -142,7 +167,7 @@ monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, pins the bytes, and writes the manifest. That prepare is the only network step in an Environment's life: `install` and verify read the pinned bytes and never download again. Frozen means frozen, so re-adding a name refuses.
+`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, and writes the manifest. That prepare is the only network step in an Environment's life: `install` and verify check the frozen files against those hashes and never download again. Frozen means frozen, so re-adding a name refuses.
 
 The three forms differ in what the Environment can do:
 
@@ -152,11 +177,11 @@ The three forms differ in what the Environment can do:
 | `--server` with `--dev` and `--test` | trainable | a curriculum, plus both exams |
 | `--dev` and `--test` alone | eval-only | both exams, no curriculum |
 
-A trainable Environment can be a `--source`. Both eval-only forms can be an experiment's `--eval`. Only the exams-only form holds a test pile a final claim may touch. Choose it when the yardstick must carry a final claim.
+A trainable Environment can be a `--source`. Both eval-only forms can be an experiment's `--eval`. Only the exams-only form holds a test pile a final claim may touch. Choose it when an eval-only Measurement must carry a final claim.
 
 `--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` prints each Environment, its kind, and its Gym benchmarks. `--available` prints what the Gym checkout ships instead, with nothing frozen. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment prints a note instead.
+`list` prints each Environment, its kind, and its Gym benchmarks. `--available` prints what the Gym checkout ships instead, with nothing frozen. `install` verifies frozen data against its manifest and registers the benchmark configs. Install is idempotent. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
 
 ### monte dataset
 
@@ -167,11 +192,11 @@ monte dataset list [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, pins the bytes, and records where they came from. Frozen means frozen, so re-adding a name refuses.
+A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. Frozen means frozen, so re-adding a name refuses.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
-`--kind sft` screens the pile against what the SFT trainer requires. It is the only kind today, and it is what makes a Dataset runnable. An unscreened pile declares no columns, so `monte train` refuses it as material rather than a diet.
+`--kind sft` screens the pile against what the SFT trainer requires. It is the only kind today, and it is what makes a Dataset runnable. An unscreened pile declares no columns, so `monte train` refuses it as a source.
 
 For a flat pile, `--input-key` names the prompt column and `--output-key` names the completion column. They default to `input` and `output`.
 
@@ -184,9 +209,9 @@ monte sync [measurement...] [--bucket B] [--key-file PATH] [--json]
 monte push <measurement> [--run R] [--bucket B] [--key-file PATH] [--json]
 ```
 
-The two directions of the durable tier, a results bucket that outlives any box.
+`sync` and `push` are the two directions of the durable tier, the cloud results bucket that outlives any box.
 
-`sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. The Mirror is a read-only view. The durable copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
+`sync` pulls the bucket into a local Mirror, and defaults to every Measurement in it. A Mirror is a read-only local copy of the results, so you can read Ledger state with no box up. Weights never enter it. The durable copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
 
 `push` uploads one Measurement's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Measurement's own files. `push` deletes nothing remote, so retention stays a separate deliberate act. It also refuses a weight file.
 
@@ -202,11 +227,11 @@ monte box down <instance-id|name> [--json]
 
 Ephemeral Lambda GPU boxes, managed from your laptop.
 
-`up` looks for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box goes idle past its budget, or over its hard TTL. Every box is born able to kill itself.
+`up` looks for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box has been idle for 45 minutes, or once it passes its 12-hour hard TTL.
 
-The default type is `gpu_1x_h100_pcie`. `--cold` launches without the NFS data root, which means the box cannot serve a real Run.
+The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data root attached, and `--cold` launches one without it. That is why a cold box cannot serve a real Run.
 
-`--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a live-bench box dies mid-session. The flag plants `/etc/monte/keep-alive` after arming the watchdog, which disables the idle reaper. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
+`--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a box you are working on interactively dies mid-session. The flag writes `/etc/monte/keep-alive` after arming the watchdog, which disables the idle check. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
 
 `status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. It lists anything else read-only, as foreign.
 
@@ -229,15 +254,15 @@ Prints the resolved configuration: the data root and its source, the GPU check c
 1. **The reproducibility gate.** Your working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
 2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box, because that is where the data root lives.
 3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
-4. **The credentials.** Planted under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
+4. **The credentials.** Written under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
 5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
 6. **The job.** Launched detached in a tmux session. It pushes results at each transition, and the box terminates itself when the job ends.
 
-Every refusal that the laptop can prove fires on the laptop. The Measurement must exist locally, the Recipe must resolve, and the Recipe and `--source` must pair. A submission that dies box-side bills an hour to learn what the local checkout already knew.
+Every refusal that the laptop can prove fires on the laptop. The Measurement must exist locally, the Recipe must resolve, and the Recipe and `--source` must pair.
 
 `--remote` refuses alongside `--push`, because the box job already runs with it. It also refuses alongside `--dry-run`, because submitting launches real compute.
 
-Watch a submitted Run with `monte sync <measurement>` and then `monte status <measurement>`, which is never more than one transition behind live.
+Watch a submitted Run with `monte sync <measurement>` and then `monte status <measurement>`, which is never more than one transition behind live. A transition is one of five milestone events in a Run's life: the Run starting, a Checkpoint saving, a score being recorded, weights uploading, and the Run finishing.
 
 ## Environment variables
 
@@ -261,7 +286,7 @@ Credentials. Each one resolves from a direct value first, then from 1Password. M
 | `MONTE_LAMBDA_KEY_OP` | 1Password item holding it instead | unset |
 | `MONTE_GCS_KEY_FILE` | GCS service-account JSON path for `sync` and `push` | unset |
 | `MONTE_GCS_KEY_OP` | 1Password document holding it instead | unset |
-| `MONTE_GCS_BOX_KEY_FILE` | the key planted on a box, when it differs from yours | unset |
+| `MONTE_GCS_BOX_KEY_FILE` | the key written to a box, when it differs from yours | unset |
 | `MONTE_GCS_BOX_KEY_OP` | 1Password document holding that one | `GCS SA key - monte-box (rw monte-platform-results)` |
 | `HF_TOKEN` | Hugging Face token: a real train pushes Checkpoints there, `env add --server` freezes with it, and `dataset add --from-hf` reads gated repos with it | unset |
 | `MONTE_HF_TOKEN_OP` | 1Password item holding it instead | unset |
@@ -284,11 +309,11 @@ Box provisioning:
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag, a missing argument, a missing `--recipe` or `--source` |
-| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its diet, two flags naming one target |
+| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target |
 | 3 | `E_NO_BASELINE` | train without a matching-Cohort Baseline |
 | 4 | `E_FROZEN_FIELD` | a launch would change a frozen Measurement field |
 | 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
-| 6 | `E_PREFLIGHT` | preflight failed: the lock, fingerprint drift, the disk floor, a foreign GPU process |
+| 6 | `E_PREFLIGHT` | preflight failed: the lock, fingerprint drift, the free-space minimum, a foreign GPU process, a test eval on a Cohort with no `test@0` baseline, or a final-claim selection whose candidates are not all pairable |
 | 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
 | 8 | `E_MEASUREMENT_EXISTS` | `experiment init` on a name that exists |
 | 9 | `E_NOT_FOUND` | no such Measurement, Run, Environment, Dataset, or Checkpoint |
