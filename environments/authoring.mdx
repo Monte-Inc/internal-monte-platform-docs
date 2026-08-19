@@ -4,7 +4,7 @@ description: "Build a new graded Environment package"
 ---
 
 <Note>
-Most Environments are not authored. If the exam or the curriculum you want already ships with NeMo Gym, freeze it instead: `monte env add` runs Gym's prepare once, records a hash of the files, and writes the manifest for you. See [monte env](/cli/overview#monte-env). Author a package when the graded world is yours and Gym has nothing to freeze.
+Most Environments are not authored. If the exam or the curriculum you want already ships with NeMo Gym, freeze it instead: `monte env add` runs Gym's prepare once, records a hash of the files, writes the manifest for you, and pushes the result to the Vault when a key that can write it resolves. See [monte env](/cli/overview#monte-env). Author a package when the graded world is yours and Gym has nothing to freeze.
 </Note>
 
 An Environment is its own Python package under `environments/`, a uv workspace member with its own `pyproject.toml`. `demo` is the minimal shape and the only example that ships today.
@@ -34,7 +34,7 @@ An Environment is trainable when `splits()` returns a `train` key, and eval-only
 
 `demo` is mock-only: it declares no Gym benchmarks, so it has no real-execution half. A package that scores real models needs three more things, and no shipped package demonstrates them. The `math` worked example was deleted rather than kept half-current.
 
-- **Frozen data.** Real task data lives on the data root, never in the repo. You copy it there from a copy whose bytes already match the manifest, and you never derive it on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent.
+- **Frozen data.** Real task data never lives in the repo. You copy it onto the data root from a copy whose bytes already match the manifest, and you never derive it on a box. Your `install()` checks the files against `manifest.json` and registers the Gym benchmark configs. Install must be idempotent. `monte env add` pushes what it freezes to [the Vault](/concepts/environments#where-a-frozen-input-lives), and a data root copy of what landed there is replaceable. It lands only when a key that can write the Vault resolves, and a package you author is never pushed at all, so keep your own copy of those bytes.
 - **The Gym rows file.** Each `*.gym.jsonl` file, re-derived from the frozen source through the current prompt renderer. These are the rows Gym reads.
 - **The resources server.** Your FastAPI grading app plus its configs, copied to a name-derived Gym path. Training and eval both grade through this one server.
 

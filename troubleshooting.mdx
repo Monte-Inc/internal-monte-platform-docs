@@ -51,21 +51,43 @@ A mock-only Environment declares no Gym benchmarks, so it has nothing to run for
 
 ### env install refuses: data does not match the manifest
 
-Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy drifted.
+Every frozen file is hashed on every read and compared against the hash `manifest.json` pins. The refusal names the file and both hashes, and which fix applies depends on which copy is wrong.
 
 - **The copy inside the Gym checkout**, the one Gym reads, is missing, stale, or was edited in place. This one usually surfaces at preflight rather than at install. Re-run `monte env install <name>` to write it again from the frozen files.
-- **The frozen file on the data root** is missing or unreadable here. The manifest still claims the name, so freezing it again under the same name refuses: add it again under a new name with `monte env add --benchmark <benchmark> --as <name>`.
-- **The frozen file on the data root** drifted since it was pinned. There is no repair for this one, because rows that changed after they were pinned are a different Measurement. Re-add them under a new name.
+- **The frozen file on the data root is missing** or unreadable here. The repair is a refetch, so it needs two things: a key that can read the Vault, and the Vault holding this Environment. `monte env list --vault` answers both at once. It refuses with `E_STORAGE` when there is no read key, and that refusal is its own answer: without one, nothing can be fetched back, so move nothing yet.
+  - **It is in the Vault.** Move the Environment's directory out of the data root rather than deleting it, somewhere `monte env list` does not look, then run `monte env install <name>`. Getting it out of the way is the load-bearing half, because install decides by the manifest: a directory that still holds one gets verified, not refetched. With it gone, install pulls the whole thing and proves every hash. Delete what you moved once that succeeds, and not before: a pull can fail its own hash check, and then the copy you set aside is the only one left. Install registers into the NeMo Gym checkout, so run it on a machine whose `MONTE_LOCAL` holds the stack.
+  - **It is not.** A package you author never enters the Vault, and neither does an add that ran without a key that can write it. Delete nothing: the data root holds the only copy there is. Once bytes are gone they are gone, and the manifest still claims the name, so freezing it again under that name refuses. For a local-only freeze, add it under a new name with the same `monte env add` form that froze it. For a package you author, `monte env add` never ran, so the answer is the copy [the authoring page](/environments/authoring) tells you to keep.
+- **The frozen file on the data root drifted** since it was pinned. Same repair, same precondition, and the same guard: check `monte env list --vault` first. If it is there, move the directory out of the data root, install again, and the pinned copy comes back. Delete what you moved once the install succeeds. If it is not, delete nothing. The drifted directory is the only copy of those bytes, and the pinned ones are gone. There is no repair for the edit itself, either way. Rows that changed after they were pinned are a different Measurement, and they can enter Monte again only under a new name.
 
 Never regenerate frozen Splits on a box to repair them. A regenerated copy will not hash to what the manifest pins, so it refuses the same way.
 
 ### E_REMOTE: the tree is dirty or unpushed
 
-`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root attached, so it cannot serve a real Run.
+`--remote` runs the commit origin holds, so the box can re-derive the Run. Commit and push, then submit again. The same code covers a box that cannot serve the Run, such as one launched with `--cold`. A cold box has no data root. It has nowhere to read the Measurement from or write the Run's rows to, so it cannot serve a real Run. The Vault holds frozen Environments and Datasets, not a Measurement's own files.
 
 ### E_BOX or E_STORAGE: no credentials
 
-Both name the variable they wanted. `box` and `--remote` need a Lambda key, `sync` and `push` need a GCS key, and a real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+Both name the variable they wanted. `box` and `--remote` need a Lambda key. `sync`, `push`, `env list --vault`, and `dataset list --vault` need a GCS key and refuse without one. A real remote train needs a Hugging Face token. The [environment-variable tables](/cli/overview#environment-variables) list each one and its 1Password fallback.
+
+The two ladders are not symmetric. A read resolves `MONTE_GCS_KEY_FILE`, then `MONTE_GCS_KEY_OP`, and stops. A write tries `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then falls back to that read pair, which on a laptop holds a key that cannot write. So the box key alone leaves every read with no credentials at all. The ordinary key alone is worse to diagnose, because a write resolves it and then fails on the bucket rather than on the lookup. `monte push` returns `E_STORAGE` for a key that is set. A freeze is the one place this is caught early and said out loud: `env add` probes the key before prepare, and the note that follows names the key and the recovery.
+
+A fetch with no read key refuses as `E_NOT_FOUND` rather than as a credentials problem. That covers `monte env install` on a name this data root has never held, and `monte dataset show` on a Dataset it does not hold.
+
+### My freeze did not reach the Vault
+
+`env add` and `dataset add` never refuse for a GCS key they cannot find. They do refuse when a push starts and then fails, which is the entry below, and they refuse for a missing Hugging Face token, which `--server` and `--from-hf` need. Writing the Vault needs the read-write key, and a laptop's ordinary key is read-only there, so a laptop needs `MONTE_GCS_BOX_KEY_FILE` or `MONTE_GCS_BOX_KEY_OP` set. Without one the freeze still happens, on this data root alone, and the note says so and names the key.
+
+Freeze again as soon as you have the key. Move the local copy out of the data root first, because the name is claimed there and an add refuses a name it already holds. The note prints `rm -rf` for that step. Moving does the same job and keeps the bytes until the new freeze has proven itself. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists, a re-freeze is a different Measurement and the moment has passed.
+
+The name is still claimed against the Vault. Checking a claim is a read, and a read-only key can read, so a name another region already froze refuses here even though this machine could not have pushed it. Only a machine with no resolvable GCS key at all checks this data root alone, and that is the one case where two regions can end up holding different bytes under one name.
+
+### An add failed after it froze
+
+Losing the name to another region is the case that changes your data root. Monte removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie no later command could correct. The frozen files stay on disk, and nothing discovers them.
+
+Every other push failure keeps the freeze. A dropped connection, an IAM change mid-flight, a Ctrl-C during a multi-gigabyte upload: none of them took a name from anyone, and prepare can be expensive to run again, so the Environment is left exactly where a keyless freeze would leave it. The command refuses with `E_STORAGE` rather than exiting clean, and the refusal says the freeze survived and names the directory holding it. Treat what you have as the entry above.
+
+The lost-race refusal names both halves of its fix. Re-add under a new name, which is `--as` for an Environment and the name argument for a Dataset. Then bring the winner's copy here: `monte env install <name>` for an Environment, `monte dataset show <name>` for a Dataset.
 
 ### Training preflight refuses: disk
 
