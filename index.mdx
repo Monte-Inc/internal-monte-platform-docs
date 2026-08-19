@@ -16,7 +16,11 @@ Monte fixes what has to be held still for a comparison to mean anything. Results
 
 ## How it works
 
-Monte holds what each training Run did, what each eval scored, and how a model performs on a given Task.
+Monte covers the post-training loop end to end. You define an Environment: the tasks, the data behind them, and a grader that decides what a good answer looks like. Bring your own of each, or freeze one from an existing catalog. You then evaluate any model against that Environment, and train on it with supervised fine-tuning or reinforcement learning.
+
+What makes those numbers worth anything is that the conditions are fixed before the work starts. An Experiment freezes which tasks run, how the model is sampled, and what counts as correct. Every Run records the method, the data, and the model behind it. Two results only ever get compared when they were produced the same way.
+
+All of it is built to be read by an agent as readily as by a person. The same commands, records, and guarantees serve both, so an agent driving the loop works from context it can see rather than context it has to infer.
 
 An Environment carries what you need to score a Task: the Tasks, their answers, and the grader. One Environment can carry several Experiments. `monte experiment init` creates an Experiment and fixes which Tasks you score and how you score them. An Experiment over a trainable Environment is one whose Tasks you can also train on. An Experiment over an eval-only Environment is a fixed reference any model can be scored against.
 
