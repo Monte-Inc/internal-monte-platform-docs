@@ -2,7 +2,7 @@
 title: "Glossary"
 ---
 
-Everything Monte does is recorded as a Run, and every Run is one row in its Measurement's Ledger. The Ledger only ever grows. Rows are never rewritten, each Run writes its own file, and every row carries the hashes needed to trace a score back to the exact inputs that produced it.
+Everything Monte does is recorded as a Run, and every Run is one row in its Experiment's Ledger. The Ledger only ever grows. Rows are never rewritten, each Run writes its own file, and every row carries the hashes needed to trace a score back to the exact inputs that produced it.
 
 The groupings you read are not stored. A Cohort and a Lineage are both derived from row fields when you ask for them, so neither can fall out of agreement with the record it came from.
 
@@ -15,17 +15,17 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Curriculum** | A trainable Environment's own training Tasks, scored live by that Environment's grader as the model attempts them. A frozen Dataset is the other thing a Run can train on, and neither one is ever called by the other's name. |
 | **Rollout** | One attempt at one Task, from prompt through to a graded reward. |
 | **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
-| **Split** | A frozen list of Task IDs. A Measurement over a trainable Environment owns `train`, `dev`, and `test`. A Measurement over an eval-only Environment owns `dev` alone when that Environment was frozen from one benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim. |
+| **Split** | A frozen list of Task IDs. An Experiment over a trainable Environment owns `train`, `dev`, and `test`. An Experiment over an eval-only Environment owns `dev` alone when that Environment was frozen from one benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim. |
 
 ## What gets frozen
 
 | Term | Meaning |
 | --- | --- |
-| **Measurement** | A frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. See [Measurement](/concepts/measurement). |
+| **Experiment** | A frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. See [Experiment](/concepts/experiment). |
 | **Fingerprint** | A hash over the Environment's frozen material: the Tasks, the grader, the harness configuration, and for a trainable Environment its training data. A Run is refused when any of it has changed. |
 | **Comparability config** | The two things hashed together to decide whether two Runs can be compared: the Environment's fingerprint and the frozen eval settings. The base model stays outside it, because it is the other half of the Cohort key. Train settings stay outside it too, because a Baseline is taken before any training and no training setting can affect it. |
-| **Dataset** | A frozen, named pile of demonstration rows for supervised fine-tuning. Any overlap with frozen exams is recorded when it is frozen. Never part of a Measurement. Monte uses this word for that frozen pile only: an Environment's own task material is never called a dataset. |
-| **Baseline** | The base model's score before any training. In an experiment it is two scores taken at that same point: `eval@0` on `dev`, and `test@0` from a separate `monte eval <measurement> --split test` you run yourself before any training. Every later score in the same Cohort is read against it. |
+| **Dataset** | A frozen, named pile of demonstration rows for supervised fine-tuning. Any overlap with frozen exams is recorded when it is frozen. Never part of an Experiment. Monte uses this word for that frozen pile only: an Environment's own task material is never called a dataset. |
+| **Baseline** | The base model's score before any training. In an experiment it is two scores taken at that same point: `eval@0` on `dev`, and `test@0` from a separate `monte eval <experiment> --split test` you run yourself before any training. Every later score in the same Cohort is read against it. |
 
 ## What runs
 
@@ -43,7 +43,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Source** | What a training Run trains on, stated on every train: a trainable Environment's curriculum (its own training Tasks, graded live), or a frozen Dataset under an sft Recipe. Recorded on the row. |
 | **Move** | One decision: which Checkpoint to start from, which Source to train on, and which Recipe to run. `monte status` renders it in each hop label as `algorithm:source`. |
 | **Improver** | The outer-loop agent that drives a search: it reads the Ledger, decides the next Move, runs it, and reads what came back. It decides from `dev` alone, and never sees a `test` number its own search produced. See [The Improver](/concepts/improver). |
-| **Envelope** | The approved terms of one Improver search, fixed before it starts: the Measurement, the goal, the time window, the spend ceiling, the box, and whether the search is `closing` (it ends with the blind final claim) or `open` (it ends with a sync, and the Cohort's last `test` read stays unspent). While one is active, Monte refuses `test` evals and `monte promote`, and starts no new Run past the window. |
+| **Envelope** | The approved terms of one Improver search, fixed before it starts: the Experiment, the goal, the time window, the spend ceiling, the box, and whether the search is `closing` (it ends with the blind final claim) or `open` (it ends with a sync, and the Cohort's last `test` read stays unspent). While one is active, Monte refuses `test` evals and `monte promote`, and starts no new Run past the window. |
 | **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
 
 ## What is derived
@@ -65,7 +65,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 
 | Term | Meaning |
 | --- | --- |
-| **Ledger** | The append-only, per-Measurement record of Runs: what happened, in what order, with what score. The CLI and the Console read it through one API rather than touching the files. |
+| **Ledger** | The append-only, per-Experiment record of Runs: what happened, in what order, with what score. Everything that reads it goes through one API rather than touching the files. |
 | **Trace** | One Run's attempt at one Task: the rollout verbatim, plus the grader's own fields. |
 | **Provenance** | The hashes carried on every row, covering the code, the configuration, the Splits, the comparability config, and the container image. |
 

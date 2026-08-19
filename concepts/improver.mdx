@@ -2,11 +2,11 @@
 title: "The Improver"
 ---
 
-The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads an Experiment's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
 ## One turn of the loop
 
-The Improver works one Measurement at a time, and a turn of its loop is four steps.
+The Improver works one Experiment at a time, and a turn of its loop is four steps.
 
 1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
 2. **Decide one Move**: which Checkpoint to start from, which Source to train on, and which Recipe to run.
@@ -25,7 +25,7 @@ An Envelope is the approved terms of one search, fixed before it starts and neve
 
 | Term | What it states |
 | --- | --- |
-| **Measurement** | The Measurement the search improves. Its `dev` Split is the Improver's only score. |
+| **Experiment** | The Experiment the search improves. Its `dev` Split is the Improver's only score. |
 | **Goal** | The sentence the Improver optimizes for, such as beating a named Baseline `dev` score. |
 | **Window** | When the search opens and when it closes, both in UTC with an explicit offset. The close is the hard stop. |
 | **Spend ceiling** | The approved dollar figure, stated outright rather than left as an inference from the rate. |
@@ -40,11 +40,11 @@ The box is not part of the Envelope's lifetime. One GPU box is acquired for the 
 
 Three refusals are live for as long as an Envelope is active, and they hold regardless of which command asked or which harness ran it.
 
-- **`monte eval <measurement> --split test` is refused**, in every spelling, `--smoke` included. A smoke Run skips the two-read budget on `test`, so it is the one spelling that would otherwise work.
+- **`monte eval <experiment> --split test` is refused**, in every spelling, `--smoke` included. A smoke Run skips the two-read budget on `test`, so it is the one spelling that would otherwise work.
 - **`monte promote` is refused.** Promotion is a human act on audited evidence, and it waits for the search to close.
 - **No new Run starts past the window's close.** The window is the approved spend, so a Run started after it is spend nobody approved.
 
-Each of those is keyed to one Envelope's id, and an Envelope binds only the Measurement it names on the box it runs on. There is no global mode anywhere in this. A person evaluating a different Measurement is never refused by it, and neither is a second search on a second box.
+Each of those is keyed to one Envelope's id, and an Envelope binds only the Experiment it names on the box it runs on. There is no global mode anywhere in this. A person evaluating a different Experiment is never refused by it, and neither is a second search on a second box.
 
 Active means the record says active, and it does not mean the window is still open. An Envelope whose time has run out stays active until the finalizer marks it closed. A finalizer that never ran therefore leaves `test` refused rather than quietly available. Closing the record by hand is the way out of that, and it is a deliberate act with a typed confirmation.
 
@@ -85,7 +85,7 @@ monte envelope finalize <envelope-id> [--json]
 monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 ```
 
-`list` prints every Envelope record this host can see, each with its state, its claim bit, its Measurement, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
+`list` prints every Envelope record this host can see, each with its state, its claim bit, its Experiment, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
 
 `finalize` runs the sequence above. It belongs to the box watchdog rather than to a person, and it is idempotent, because that watchdog will call it more than once. An already-closed Envelope is reported and not re-finalized, so the last `test` read cannot be spent twice.
 
@@ -101,7 +101,7 @@ One Envelope runs at a time, on one box, and its search is serial: one Run, then
   <Card title="Improvement" href="/concepts/improvement">
     The loop the Improver drives.
   </Card>
-  <Card title="Measurement" href="/concepts/measurement">
+  <Card title="Experiment" href="/concepts/experiment">
     What `dev` and `test` are for.
   </Card>
   <Card title="Glossary" href="/concepts/glossary">

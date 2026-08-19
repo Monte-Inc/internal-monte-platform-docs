@@ -1,38 +1,38 @@
 ---
-title: "Measurement"
+title: "Experiment"
 ---
 
-A Measurement is a fixed standard for scoring a model. Two Runs under the same Measurement answered the same tasks under the same rules, so you can compare them directly.
+An Experiment is a fixed standard for scoring a model. Two Runs under the same Experiment answered the same tasks under the same rules, so you can compare them directly.
 
-A Measurement is built on one [Environment](/concepts/environments), and it fixes which of that Environment's tasks run, the sampling rules, and what counts as correct.
+An Experiment is built on one [Environment](/concepts/environments), and it fixes which of that Environment's tasks run, the sampling rules, and what counts as correct.
 
-## Why a Measurement exists
+## Why an Experiment exists
 
 Evaluation has many variables you can set. You can give each Task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
 Each of those returns a different number for the same model, and none of them is wrong. They answer different questions about how well the model does the task.
 
-A Measurement holds those variables constant, so within one Measurement the model is the only thing that changed between two Runs. You can define as many Measurements as you want.
+An Experiment holds those variables constant, so within one Experiment the model is the only thing that changed between two Runs. You can define as many Experiments as you want.
 
 When the variables go unrecorded, old results stop being usable. You cannot tell why two numbers differ, so you cannot compare the experiments that produced them.
 
-## What a Measurement fixes
+## What an Experiment fixes
 
-A Measurement fixes three things when you create it.
+An Experiment fixes three things when you create it.
 
 1. **The tasks.** Which tasks run, as an exact list. Not a count and not a name, but those specific tasks.
 2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-A Measurement fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
+An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
 
-A Measurement names no model either: each Run binds its own, so many models can compete under one Measurement.
+An Experiment names no model either: each Run binds its own, so many models can compete under one Experiment.
 
-Monte checks the frozen material before every Run. If any of it changed, that is a different Measurement, and Monte refuses to score the new Run against the old ones.
+Monte checks the frozen material before every Run. If any of it changed, that is a different Experiment, and Monte refuses to score the new Run against the old ones.
 
 ## The Splits
 
-A Measurement owns its Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. A Measurement over a trainable Environment carries all three. One over an eval-only Environment carries `dev` alone when that Environment was frozen from a single benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim.
+An Experiment owns its Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. An Experiment over a trainable Environment carries all three. One over an eval-only Environment carries `dev` alone when that Environment was frozen from a single benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim.
 
 - **`train`.** What the model learns on.
 - **`dev`.** What the driving agent reads to choose its next Move.
@@ -44,7 +44,7 @@ The driving agent picks each next Move from what `dev` shows, so the loop fits i
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
-    The graded world a Measurement freezes.
+    The graded world an Experiment freezes.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">
     How Splits, Baselines, and deltas judge improvement.

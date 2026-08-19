@@ -12,17 +12,18 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **experiment** (lowercase) — a Measurement over a trainable Environment: one training story whose evidence is self-contained. The CLI verb is `monte experiment init`. Its counterpart is a Measurement over an eval-only Environment: a long-lived reference any model can be measured against. The platform's `CONTEXT.md` calls that a **yardstick**, but this site does not use the word — write "an eval-only Measurement" instead. Capital-E **Experiment** (a grouping above Measurements) stays RESERVED and unimplemented — do not document that one as usable.
-- **Measurement** — a frozen evaluation contract over one Environment. Capitalize. Never "benchmark" or "eval suite".
+- **Experiment** — a frozen evaluation contract over one Environment: which Tasks run, under which settings, and what counts as correct. Capitalize. Never "benchmark" or "eval suite". The CLI verb that creates one is `monte experiment init`.
+
+  Until 2026-08-19 this primitive was called a **Measurement**, and "experiment" (lowercase) named one particular kind of it — a Measurement over a trainable Environment. That split is gone: there is one primitive, it is the Experiment, and an Experiment over a trainable Environment is simply one whose Tasks you can also train on. If you find a page still calling the primitive a Measurement, it was missed and should be fixed. The platform's `CONTEXT.md` calls an eval-only one a **yardstick**; this site does not use that word — write "an eval-only Experiment" instead.
 - **Environment** — a pluggable graded task package. Never "dataset" (see Dataset below — a different thing).
-- **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model, the Recipe, and the Source bind here.
+- **Run** — one eval or train execution, recorded as a row in an Experiment's Ledger. The model, the Recipe, and the Source bind here.
 - **Source** — what a training Run trains on, stated on every train (`--source`): a trainable Environment's curriculum (its own or another's) or a frozen Dataset (sft only). Recorded on the row; rendered in the hop label `algorithm:source`.
-- **Dataset** (capital D) — a frozen, named pile of demonstration rows for sft (`monte dataset add`), with any overlap against frozen exams recorded at freeze. Never part of a Measurement's definition. The lowercase ban above still stands.
+- **Dataset** (capital D) — a frozen, named pile of demonstration rows for sft (`monte dataset add`), with any overlap against frozen exams recorded at freeze. Never part of an Experiment's definition. The lowercase ban above still stands.
 - **Move** — one decision by the driving agent: a Checkpoint × a Source × a Recipe.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
 - **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by its move (`algorithm:source`); the Recipe stays on the row. Also derived. Checkpoints form a tree, not a line.
 - **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, inherits the pinned trainer's shipped config, pinned by content hash.
-- **Ledger** — the append-only per-Measurement record. Never "database" or "history".
+- **Ledger** — the append-only per-Experiment record. Never "database" or "history".
 - **Split** — a frozen task partition (train pool, dev, test).
 - **Baseline** — the base-model eval later runs are compared against.
 - **chain** is a **verb**, never a noun: "a Run chains from a Checkpoint". There is no `Chain` object.
@@ -55,6 +56,6 @@ is worse than no note at all.
 
 ## Content boundaries
 
-- Document the user-facing surfaces: CLI, environments, console, concepts.
+- Document the user-facing surfaces: CLI, environments, concepts.
 - Do not copy internal planning docs, research reports, or box operational details (hostnames, IPs, SSH specifics) into this site.
 - The platform repo's `docs/` folder is internal engineering material, not a source to republish verbatim.

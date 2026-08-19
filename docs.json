@@ -15,46 +15,37 @@
   "navigation": {
     "groups": [
       {
-        "group": "Getting started",
+        "group": "Getting Started",
         "pages": [
           "index",
-          "quickstart"
-        ]
-      },
-      {
-        "group": "Concepts",
-        "pages": [
-          "concepts/environments",
-          "concepts/measurement",
-          "concepts/evaluation",
-          "concepts/training",
-          "concepts/improvement",
-          "concepts/improver",
+          "quickstart",
           "concepts/glossary"
         ]
       },
       {
-        "group": "CLI reference",
+        "group": "Core Concepts",
         "pages": [
-          "cli/overview"
+          "concepts/environments",
+          "concepts/experiment",
+          "concepts/evaluation",
+          "concepts/training",
+          "concepts/improvement"
         ]
       },
       {
-        "group": "Environments",
+        "group": "Agentic Post-Training",
         "pages": [
-          "environments/authoring"
+          "concepts/improver"
         ]
       },
       {
-        "group": "Console",
+        "group": "CLI Reference",
         "pages": [
-          "console/overview"
-        ]
-      },
-      {
-        "group": "Help",
-        "pages": [
-          "troubleshooting"
+          "cli/overview",
+          "cli/experiments",
+          "cli/environments",
+          "cli/boxes",
+          "cli/reference"
         ]
       }
     ]
@@ -87,6 +78,22 @@
     {
       "source": "/concepts/splits-baselines",
       "destination": "/concepts/improvement"
+    },
+    {
+      "source": "/console/overview",
+      "destination": "/"
+    },
+    {
+      "source": "/concepts/measurement",
+      "destination": "/concepts/experiment"
+    },
+    {
+      "source": "/troubleshooting",
+      "destination": "/"
+    },
+    {
+      "source": "/environments/authoring",
+      "destination": "/concepts/environments"
     }
   ],
   "logo": {
