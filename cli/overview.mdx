@@ -241,11 +241,11 @@ The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data
 
 `--envelope` opens an [Envelope](#monte-envelope) on the box as it launches. It takes the approved Envelope JSON, and the launch is matched against those terms by the Envelope's id. The check runs twice on purpose: once before any box exists, so a launch outside the terms costs nothing, and again once the box is real, because the hourly rate is a term only a live box can answer.
 
-Opening an Envelope changes what the box is. The window lands in the identity file, so the watchdog holds idle reaping off until the window closes and then runs the finalizer. The record is planted where the search can read it and never edit it, so `monte` on that box refuses the test Split and `promote` on that Measurement. A non-root user is provisioned for the search to ssh in as, with a shell and the `monte` CLI, and with no sudo and no secrets.
+Opening an Envelope changes what the box is. The window lands in the identity file, so the watchdog holds idle reaping off until the window closes and then runs the finalizer. The record is planted where the Improver can read it and never edit it, so `monte` on that box refuses the test Split and `promote` on that Measurement. A non-root user is provisioned for the Improver to ssh in as, with a shell and the `monte` CLI, and with no sudo and no secrets.
 
 `--hours` sets the window length from now, and `--until` takes an ISO stamp with an offset. State one, and only with `--envelope`: a window is only meaningful as one Envelope's window, so either flag on its own refuses with `E_ENVELOPE`. Neither may stretch the window past the approved close. Re-anchoring can only shorten it, because the minutes capacity shopping burns should not be spent against the approval.
 
-The box's hard TTL is raised where it has to cover the window and the finalizer's grace period. It stays a backstop, and it stops being one that ends an approved search early.
+The box's hard TTL is raised where it has to cover the window and the finalizer's grace period. It stays a backstop, and it stops being one that ends an approved search early. Idle reaping is suspended for the window.
 
 `status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. It lists anything else read-only, as foreign.
 
@@ -263,15 +263,15 @@ monte envelope push-transcript <envelope-id>
 monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 ```
 
-An Envelope is the approved terms of one automated search: which Measurement it may work on, how long its window stays open, and what it may spend. It is opened on a box by `monte box up --envelope`, and it binds every `monte` command on that host, not only the search's own.
+An Envelope is the approved terms of one Improver search: which Measurement it may work on, how long its window stays open, and what it may spend. The Improver is the agent that drives the loop unattended, and the Envelope is what bounds it. An Envelope is opened on a box by `monte box up --envelope`, and it binds every `monte` command on that host, not only the Improver's own.
 
 While an Envelope is active on a Measurement, three things refuse with `E_ENVELOPE`. `monte eval --split test` refuses, because dev selects and test never decides. `monte promote` refuses, because promotion is a human act on audited evidence. Any new Run refuses once the window has closed, because the window is the spend that was approved.
 
 `list` prints every Envelope record this host can see, as one list: the box's root-owned registry and the host's own. `show` prints one in full, the approved terms verbatim plus the state Monte owns.
 
-`finalize` is the watchdog's verb, not yours. At the record's `finalize_at`, the box's watchdog runs it, in this order: stop the search, mark the Envelope closed, run the blind final claim, push the Checkpoint that claim selects, sync the results tree, sync the transcript, release the box to idle. Marking it closed comes before the claim, which is what lets the claim run the test eval the search itself is refused. It is idempotent, and it has to be: the watchdog fires every five minutes and will call it twice. A step that fails is reported, and the box is released either way.
+`finalize` is the watchdog's verb, not yours. At the record's `finalize_at`, the box's watchdog runs it, in this order: stop the Improver, mark the Envelope closed, run the blind final claim, push the Checkpoint that claim selects, sync the results tree, sync the transcript, release the box to idle. Marking it closed comes before the claim, which is what lets the claim run the test eval the Improver itself is refused. It is idempotent, and it has to be: the watchdog fires every five minutes and will call it twice. A step that fails is reported, and the box is released either way.
 
-`push-transcript` uploads one Envelope's search transcript to the results bucket. It is its own verb because the transcript is written where the search runs, and the finalizer runs where the compute is, so the finalizer's transcript step finds nothing to send there. It deletes nothing and skips an unchanged file, so running it twice costs one listing.
+`push-transcript` uploads one Envelope's Improver transcript to the results bucket. It is its own verb because the transcript is written where the Improver runs, and the finalizer runs where the compute is, so the finalizer's transcript step finds nothing to send there. It deletes nothing and skips an unchanged file, so running it twice costs one listing.
 
 `close` marks an Envelope consumed without finalizing it. It is an escape hatch, for an Envelope whose finalizer never ran: an Envelope stays active forever until something closes it, and active means that Measurement's test Split stays refused. Closing by hand clears the guards and **skips the blind final claim entirely**. That is why the confirm is hard, like `promote`'s: pass `--confirm <envelope-id>`, typed out, or the command refuses with `E_CONFIRM`. `--reason` is recorded on the record, and defaults to `closed by hand`.
 
@@ -355,7 +355,7 @@ Box provisioning and Envelope paths. The last four move where this host keeps it
 | `MONTE_STATE_DIR` | monte's own local state: box launch records and Envelope records | `~/.monte` |
 | `MONTE_ETC` | this host's box-local state directory: the release stamp it writes, the box identity it reads | `/etc/monte` |
 | `MONTE_ENVELOPE_DIR` | this host's own Envelope registry | `<state dir>/envelopes` |
-| `MONTE_IMPROVER_DIR` | the search's state directory | `<data root>/improver` |
+| `MONTE_IMPROVER_DIR` | the Improver's state directory | `<data root>/improver` |
 | `MONTE_IMPROVER_LOGS` | where `envelope push-transcript` looks for the transcript | `<improver dir>/logs` |
 
 ## Exit codes
