@@ -3,15 +3,15 @@ title: "Introduction"
 description: "What Monte is and why it exists"
 ---
 
-Monte runs the post-training loop: train, evaluate, compare. It records the conditions every Run ran under, and a driving agent works the loop from that record.
+Monte is the agent-native platform for model post-training. It runs the loop — train, evaluate, compare — and records the conditions behind every result, so an agent can work from that record rather than from memory.
 
-AI agents can handle individual tasks in LLM post-training research. They can change a Recipe, launch a Run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
+AI agents handle the individual tasks of post-training research well. They can change a training method, launch a run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
 
-An agent can become anchored to an early diagnosis and keep working from it after the evidence changes. It can focus on a single result or metric while losing sight of the broader direction. It may compare results produced under different conditions, repeat earlier work, or fail to reconsider a weak approach. The agent can appear productive at each step while the overall improvement process drifts.
+An agent can anchor to an early diagnosis and keep working from it after the evidence has moved. It can chase a single metric and lose the broader direction. It may compare results produced under different conditions, repeat work it already did, or stick with an approach that stopped paying off. At each step it looks productive, while the process as a whole drifts.
 
-Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time. Agents can use this record to revisit decisions and choose what to try next.
+Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time, so an agent can revisit a decision and choose what to try next.
 
-Monte fixes what must be known for a comparison to mean something. Runs that share one base model, one frozen Environment, and one set of eval settings form a Cohort. Each Cohort gets its own Baseline, and a delta never crosses from one Cohort into another. Monte does not constrain the training method or the research strategy.
+Monte fixes what has to be held still for a comparison to mean anything. Results are compared only against others produced the same way: the same starting model, the same frozen tasks, the same evaluation settings. Each such group carries its own baseline, and a comparison never crosses between groups. What Monte does not constrain is the training method or the research strategy.
 
 <Note>
   Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
