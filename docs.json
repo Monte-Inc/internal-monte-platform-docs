@@ -157,14 +157,6 @@
     "light": "/logo/light.png",
     "dark": "/logo/dark.png"
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "href": "https://github.com/Monte-Inc/internal-monte-platform"
-      }
-    ]
-  },
   "contextual": {
     "options": [
       "copy",
@@ -176,10 +168,5 @@
       "cursor",
       "vscode"
     ]
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/Monte-Inc"
-    }
   }
 }
