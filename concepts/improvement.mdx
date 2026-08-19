@@ -9,7 +9,7 @@ With that many variables in play, the record of what you changed matters as much
 The figure below is a high-level view of that work with the driving agent running it. Two things move at different speeds inside it: the model's weights, and the method used to change them.
 
 ```mermaid actions={false}
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594', 'fontSize': '26px'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 10}, 'rankSpacing': 45, 'nodeSpacing': 30, 'padding': 12}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594', 'fontSize': '26px'}, 'flowchart': {'subGraphTitleMargin': {'top': 12, 'bottom': 40}, 'rankSpacing': 45, 'nodeSpacing': 30, 'padding': 12}}}%%
 flowchart LR
     subgraph INNER["Moves the weights"]
         direction TB

@@ -1,3 +1,19 @@
+/* Centre mermaid diagrams in the content column.
+   A diagram narrower than the column sits flush left by default, which
+   reads as misalignment next to the prose. A diagram that already fills
+   the width is unaffected. */
+
+.mermaid,
+[class*="mermaid"] {
+  text-align: center;
+}
+
+.mermaid > svg,
+[class*="mermaid"] > svg {
+  display: block;
+  margin-inline: auto;
+}
+
 /* Mermaid subgraph titles.
    The diagrams set primaryTextColor to near-white so node labels read
    against the navy fills. Subgraph titles inherit that colour but sit on a
