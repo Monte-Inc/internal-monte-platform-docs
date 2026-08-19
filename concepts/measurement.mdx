@@ -8,7 +8,7 @@ A Measurement is built on one [Environment](/concepts/environments), and it fixe
 
 ## Why a Measurement exists
 
-Evaluation has many variables you can set. You can give each task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
+Evaluation has many variables you can set. You can give each Task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
 Each of those returns a different number for the same model, and none of them is wrong. They answer different questions about how well the model does the task.
 
@@ -21,7 +21,7 @@ When the variables go unrecorded, old results stop being usable. You cannot tell
 A Measurement fixes three things when you create it.
 
 1. **The tasks.** Which tasks run, as an exact list. Not a count and not a name, but those specific tasks.
-2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each task gets.
+2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
 A Measurement fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.

@@ -13,13 +13,13 @@ Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two thing
 
 An Environment has three parts, and the agent harness sits beside them.
 
-**Task material.** The tasks, plus the data needed to score each attempt. One task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a task into a model call belongs here too.
+**Task material.** The tasks, plus the data needed to score each attempt. One Task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a Task into a model call belongs here too.
 
-**Grader.** It scores one attempt into a reward, usually between 0 and 1, by checking the output against the task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment, and it serves two jobs at once, because its scores become both the eval metric and the training reward.
+**Grader.** It scores one attempt into a reward, usually between 0 and 1, by checking the output against the Task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment, and it serves two jobs at once, because its scores become both the eval metric and the training reward.
 
 **Tools and state.** The per-task world that the agent changes as it acts. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
 
-**Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a task is done. A simple harness only loops until the task completes, while others add planning, memory, and skills. Each Run states which model it uses.
+**Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a Task is done. A simple harness only loops until the Task completes, while others add planning, memory, and skills. Each Run states which model it uses.
 
 Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or a Measurement. One Environment can serve several Measurements: the same tasks, frozen under different settings.
 
@@ -29,13 +29,13 @@ You can measure any environment from the NeMo Gym catalog, or write your own as 
 
 A rollout runs across three servers: one for the model, one for the agent harness, and one for the Environment's grader.
 
-1. The harness reads one Task from the Split. The Split is a list of task IDs.
+1. The harness reads one Task from the Split. The Split is a list of Task IDs.
 2. The harness sends the Task to the model server, with the prompt already applied, and collects the reply.
 3. The harness sends the reply to the grader.
 4. The grader returns a reward and the answer that it extracted.
 5. Monte records one Trace for each Task, then writes the score to the Ledger.
 
-A training Run uses the same grader, and although eval and training each run their own copy of it, preflight proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
+A training Run uses the same grader, and although eval and training each run their own copy of it, preflight, the set of checks Monte runs before it launches anything, proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
 
 ## Related pages
 

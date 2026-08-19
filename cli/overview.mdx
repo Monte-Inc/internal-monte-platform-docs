@@ -70,7 +70,7 @@ That Cohort cannot recover. Once a Checkpoint exists, there is no way to go back
 
 `--step N` scores the Checkpoint at that absolute step. It refuses when two branches of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the branch exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is chosen by Monte, not by you. A `--smoke` run is exempt from that last rule, because it decides nothing.
 
-Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. The fix is to run the command where the run directories live, which is the box.
+Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. It refuses for the same reason when the dev Baseline's own per-task file cannot be read, since that is the anchor every candidate is measured against. The fix in both cases is to run the command where the run directories live, which is the box.
 
 `--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the durable tier, the cloud results bucket that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](#remote-runs).
 
@@ -324,5 +324,8 @@ Box provisioning:
 | 14 | `E_STORAGE` | the durable tier is unreachable: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
 | 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
+| 17 | `E_ENVELOPE` | the action is outside an Envelope's approved terms: `eval --split test` or `promote` while one is active, a Run started past its window, or a box launch the Envelope does not cover |
 
-Codes 3 through 16 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
+An Envelope, in code 17, is the approved terms of one automated search: the window it runs in, what it may spend, and which box and Measurement it covers. Only a host running one ever sees that code.
+
+Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
