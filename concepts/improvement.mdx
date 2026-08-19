@@ -17,7 +17,7 @@ flowchart LR
     end
     subgraph OUTER["Moves the method"]
         direction TB
-        EVAL["Eval on dev"]:::score --> LEDGER["Ledger"]:::entry --> AGENT["Driving agent decides<br/>the next Move"]:::model
+        EVAL["Eval on dev"]:::score --> LEDGER["Ledger"]:::entry --> AGENT["Driving agent"]:::model
     end
     CKPT --> EVAL
     AGENT -->|"Select Checkpoint and Recipe"| RUN
