@@ -9,18 +9,18 @@ With that many variables in play, the record of what you changed matters as much
 The figure below is a high-level view of that work with the driving agent running it. Two things move at different speeds inside it: the model's weights, and the method used to change them.
 
 ```mermaid actions={false}
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594', 'fontSize': '18px'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 18}, 'rankSpacing': 110, 'nodeSpacing': 85, 'padding': 28}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594', 'fontSize': '26px'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 10}, 'rankSpacing': 45, 'nodeSpacing': 30, 'padding': 12}}}%%
 flowchart LR
     subgraph INNER["Moves the weights"]
         direction TB
-        TRAIN["train Split"]:::entry --> RUN["Training Run"]:::score --> CKPT["Checkpoint"]:::model
+        TRAIN["Train Split"]:::entry --> RUN["Training Run"]:::score --> CKPT["Checkpoint"]:::model
     end
     subgraph OUTER["Moves the method"]
         direction TB
         EVAL["Eval on dev"]:::score --> LEDGER["Ledger"]:::entry --> AGENT["Driving agent decides<br/>the next Move"]:::model
     end
     CKPT --> EVAL
-    AGENT -->|"chosen Checkpoint, Source, and Recipe"| RUN
+    AGENT -->|"Select Checkpoint and Recipe"| RUN
 
     classDef entry fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
     classDef model fill:#70A6C1,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
