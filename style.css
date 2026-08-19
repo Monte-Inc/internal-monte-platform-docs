@@ -1,0 +1,21 @@
+/* Mermaid subgraph titles.
+   The diagrams set primaryTextColor to near-white so node labels read
+   against the navy fills. Subgraph titles inherit that colour but sit on a
+   transparent cluster, so they need the page's foreground instead: dark on
+   a light page, light on a dark one. */
+
+.mermaid .cluster-label text,
+.mermaid .cluster-label span,
+.mermaid .cluster-label p,
+.mermaid .cluster text {
+  fill: #17181B;
+  color: #17181B;
+}
+
+.dark .mermaid .cluster-label text,
+.dark .mermaid .cluster-label span,
+.dark .mermaid .cluster-label p,
+.dark .mermaid .cluster text {
+  fill: #F0F1F2;
+  color: #F0F1F2;
+}
