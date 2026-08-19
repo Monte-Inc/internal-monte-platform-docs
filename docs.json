@@ -45,12 +45,7 @@
           "cli/experiment",
           "cli/eval",
           "cli/train",
-          "cli/status",
-          "cli/logs",
-          "cli/promote",
           "cli/env",
-          "cli/dataset",
-          "cli/sync",
           "cli/box"
         ]
       }
@@ -116,6 +111,26 @@
     {
       "source": "/cli/reference",
       "destination": "/cli/overview"
+    },
+    {
+      "source": "/cli/status",
+      "destination": "/cli/experiment#monte-status"
+    },
+    {
+      "source": "/cli/logs",
+      "destination": "/cli/experiment#monte-logs-show-stop"
+    },
+    {
+      "source": "/cli/promote",
+      "destination": "/cli/experiment#monte-promote"
+    },
+    {
+      "source": "/cli/dataset",
+      "destination": "/cli/env#monte-dataset"
+    },
+    {
+      "source": "/cli/sync",
+      "destination": "/cli/box#monte-sync-push"
     }
   ],
   "logo": {
