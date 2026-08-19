@@ -33,16 +33,16 @@
         ]
       },
       {
-        "group": "Agentic Post-Training",
-        "pages": [
-          "concepts/improver"
-        ]
-      },
-      {
         "group": "CLI",
         "pages": [
           "cli/overview",
           "cli/commands"
+        ]
+      },
+      {
+        "group": "Agentic Post-Training",
+        "pages": [
+          "concepts/naive-loop"
         ]
       }
     ]
@@ -147,6 +147,10 @@
     {
       "source": "/cli/box",
       "destination": "/cli/commands#monte-box"
+    },
+    {
+      "source": "/concepts/improver",
+      "destination": "/concepts/naive-loop"
     }
   ],
   "logo": {

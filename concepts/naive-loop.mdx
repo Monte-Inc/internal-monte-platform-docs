@@ -1,8 +1,10 @@
 ---
-title: "The Improver"
+title: "Naive Loop"
 ---
 
-The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads an Experiment's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+This is the first agentic loop Monte runs, and it is deliberately the simplest one that works. One search, one box, one Move at a time, in sequence. Everything harder — several arms compared at once, more than one box, a search that spans Experiments — is a later step, and the shape here is what those steps build on.
+
+The other pages call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads an Experiment's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
 ## One turn of the loop
 

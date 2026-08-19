@@ -42,7 +42,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Recipe** | The named file stating how a training Run trains: model shape, algorithm, the batch settings, optimizer. See [Training](/concepts/training#recipes). |
 | **Source** | What a training Run trains on, stated on every train: a trainable Environment's curriculum (its own training Tasks, graded live), or a frozen Dataset under an sft Recipe. Recorded on the row. |
 | **Move** | One decision: which Checkpoint to start from, which Source to train on, and which Recipe to run. `monte status` renders it in each hop label as `algorithm:source`. |
-| **Improver** | The outer-loop agent that drives a search: it reads the Ledger, decides the next Move, runs it, and reads what came back. It decides from `dev` alone, and never sees a `test` number its own search produced. See [The Improver](/concepts/improver). |
+| **Improver** | The outer-loop agent that drives a search: it reads the Ledger, decides the next Move, runs it, and reads what came back. It decides from `dev` alone, and never sees a `test` number its own search produced. See [Naive Loop](/concepts/naive-loop). |
 | **Envelope** | The approved terms of one Improver search, fixed before it starts: the Experiment, the goal, the time window, the spend ceiling, the box, and whether the search is `closing` (it ends with the blind final claim) or `open` (it ends with a sync, and the Cohort's last `test` read stays unspent). While one is active, Monte refuses `test` evals and `monte promote`, and starts no new Run past the window. |
 | **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
 
