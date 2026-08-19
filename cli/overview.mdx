@@ -7,12 +7,12 @@ The `monte` CLI is the only write path into the platform. This page states the c
 
 ## Conventions
 
-- **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, and `box` groups have no default on purpose. Their subcommands are different intents.
+- **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, `box`, and `weights` groups have no default on purpose. Their subcommands are different intents.
 - **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the Run persists, and its hash lands in the row as `config_hash`.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
 - **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every Run, and `monte status` prints it. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
 - **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, and `weights push`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
@@ -24,9 +24,9 @@ Three groups, and a command run from the wrong group is the most common source o
 | --- | --- | --- |
 | Anywhere | a tool install or a checkout | `experiment`, `status`, `logs`, `show`, `env`, `dataset`, `config`, `sync` |
 | Laptop, checkout only | a clean git checkout pushed to origin | `--remote` on `eval` and `train`, `box` |
-| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote` |
+| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote`, `weights push` |
 
-`--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
+`--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` and `weights push` copy weights off disk, so they run where the weights live.
 
 ## Commands
 
@@ -238,6 +238,20 @@ The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data
 `down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. It refuses a foreign instance.
 
 All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
+
+### monte weights
+
+```bash
+monte weights push <measurement> <run>/<step> [--kind servable|resume|both] [--json]
+```
+
+Pushes one already-trained Checkpoint's weights to Hugging Face, deliberately and after the fact.
+
+`train --push` decides at launch time, before the eval that says whether the chunk was worth keeping. This command is how you say it afterwards. It is also the retry when a push failed, and a retry that is not another 47-minute chunk.
+
+`--kind` picks what travels. `servable` is the roughly 6 GB Hugging Face-layout folder that serves. `resume` is the roughly 24 GB full set a later Run restores from. The default is `both`.
+
+It prunes nothing. Retention belongs to the chunk-end push, where a new resume set replaces the old one on the same arm, and this push replaces nothing. Without a Hugging Face token it refuses with `E_STORAGE`.
 
 ### monte config
 
