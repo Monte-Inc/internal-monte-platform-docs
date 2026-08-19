@@ -12,7 +12,7 @@ The `monte` CLI is the only write path into the platform. This page states the c
 - **Typed confirm.** `promote` and `envelope close` do not ask y/n. Each takes `--confirm` with a name typed out: the Measurement's for `promote`, the Envelope's id for `envelope close`. A mismatch is the same `E_CONFIRM`.
 - **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every Run, and `monte status` prints it. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
 - **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, `weights push`, and `envelope list`, `envelope show`, and `envelope finalize`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, `weights push`, and `envelope list`, `envelope show`, and `envelope finalize`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` prints the Ledger report alone. The checkpoint list, the final claim line, and the mirror note are rendered by the human view only.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
@@ -110,7 +110,11 @@ Two rules govern a continuation:
 monte status <measurement> [--json]
 ```
 
-Prints the Run rows, the per-Cohort delta lines, the `lineage:` lines, the `cycles:` line with its strike verdicts, and the checkpoint list under `checkpoints:`.
+Prints the Run rows, the per-Cohort delta lines, the final claim line, the `lineage:` lines, the `cycles:` line with its strike verdicts, the checkpoint list under `checkpoints:`, and the mirror note.
+
+**What the final claim line is.** Under the Cohort lines, `monte status` names the Checkpoint a closing Envelope would score and push, and names the Cohort it answers for. It is not the Checkpoint on the headline above it, and the two disagree often. The headline tracks the deepest step; the claim tracks the highest paired dev delta, and the best Checkpoint is routinely mid-arm. A Cohort holding no Checkpoint prints no line. A selection that cannot be made honestly prints as `final claim: no target` with the cause, rather than taking the whole report down.
+
+**What the mirror note is.** A Measurement populated by `monte sync` prints what it mirrors and when it synced. A Mirror may be stale, and it is never wrong. The marker is per Measurement, so a Measurement that was never synced never claims to be one.
 
 **What a Cycle is.** A Cycle is one turn of the loop: the first admissible eval at a new highest step along one Lineage. A retry at the same step is not a new Cycle, and two branches off one Checkpoint each get their own, because a Cycle is keyed on the path and not on the Cohort.
 
