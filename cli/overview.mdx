@@ -324,8 +324,5 @@ Box provisioning:
 | 14 | `E_STORAGE` | the durable tier is unreachable: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
 | 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
-| 17 | `E_ENVELOPE` | the action is outside an Envelope's approved terms: `eval --split test` or `promote` while one is active, a Run started past its window, or a box launch the Envelope does not cover |
 
-An Envelope, in code 17, is the approved terms of one automated search: the window it runs in, what it may spend, and which box and Measurement it covers. Only a host running one ever sees that code.
-
-Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
+Codes 3 through 16 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
