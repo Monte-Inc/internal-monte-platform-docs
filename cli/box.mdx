@@ -1,11 +1,7 @@
 ---
-title: "Box and remote run commands"
-description: "monte box, monte sync and push, and how a --remote Run is submitted"
+title: "monte box"
+description: "Ephemeral GPU boxes, and remote runs"
 ---
-
-These are the commands that get compute and move results between a box and the durable tier, plus the flow `--remote` follows.
-
-## monte box
 
 ```bash
 monte box up [--type T] [--region R] [--cold] [--keep-alive] [--ssh-key K] [--json]
@@ -26,21 +22,6 @@ The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data
 `down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. It refuses a foreign instance.
 
 All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
-
-## monte sync, push
-
-```bash
-monte sync [experiment...] [--bucket B] [--key-file PATH] [--json]
-monte push <experiment> [--run R] [--bucket B] [--key-file PATH] [--json]
-```
-
-`sync` and `push` are the two directions of the durable tier, the cloud results bucket that outlives any box.
-
-`sync` pulls the bucket into a local Mirror, and defaults to every Experiment in it. A Mirror is a read-only local copy of the results, so you can read Ledger state with no box up. Weights never enter it. The durable copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
-
-`push` uploads one Experiment's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Experiment's own files. `push` deletes nothing remote, so retention stays a separate deliberate act. It also refuses a weight file.
-
-Both resolve a GCS service-account key: `--key-file`, then `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names, fetched in memory. Without one, `E_STORAGE`.
 
 ## Remote runs
 

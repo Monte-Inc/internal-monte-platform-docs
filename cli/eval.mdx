@@ -1,0 +1,34 @@
+---
+title: "monte eval"
+description: "Score a model on an Experiment's Split"
+---
+
+```bash
+monte eval <experiment> [--model M] [--split dev|test]
+                         [--step N | --checkpoint <run>/<step>] [--smoke]
+                         [--remote] [--push] [--yes] [--dry-run] [--json]
+```
+
+Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none.
+
+**The test Split gets two reads per Cohort, and you spend the first one yourself.** Run this on the base model, before any training:
+
+```bash
+monte eval <experiment> --split test
+```
+
+The default Split is dev, so the Baseline eval alone never touches test. The command above is what records `test@0`, the score the final claim is later measured against. The second read is the final claim itself, after training.
+
+If you train first and then ask for a Checkpoint's test score, Monte refuses with `E_PREFLIGHT`:
+
+```
+E_PREFLIGHT: this cohort has no test baseline (test@0), so a checkpoint test eval would spend the final touch with nothing to pair against — the test delta would be forfeit forever
+```
+
+That Cohort cannot recover. Once a Checkpoint exists, there is no way to go back and score the base model on test, and spending the one remaining read would produce a number with nothing to compare it to. Start a new Cohort and take both Baselines before you train.
+
+`--step N` scores the Checkpoint at that absolute step. It refuses when two branches of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the branch exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is chosen by Monte, not by you. A `--smoke` run is exempt from that last rule, because it decides nothing.
+
+Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. It refuses for the same reason when the dev Baseline's own per-task file cannot be read, since that is the anchor every candidate is measured against. The fix in both cases is to run the command where the run directories live, which is the box.
+
+`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the durable tier, the cloud results bucket that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](/cli/box#remote-runs).

@@ -1,0 +1,14 @@
+---
+title: "monte experiment"
+description: "Open an Experiment and freeze its contract"
+---
+
+```bash
+monte experiment init <experiment> --eval <environment>
+```
+
+Creates the Experiment: freezes the Splits, the eval settings, and the Environment fingerprint into `measurement.json`. Refuses an existing name (`E_MEASUREMENT_EXISTS`).
+
+`--eval` names the Environment whose exams define this experiment. Its dev and test Splits and its grader produce every score the Ledger holds. An eval-only Environment is a valid `--eval`, and the experiment can still train: the training data is a separate axis, stated per Run.
+
+No Recipe is frozen here. The training method belongs to the Move, not to the experiment, so `monte train` states it every time.

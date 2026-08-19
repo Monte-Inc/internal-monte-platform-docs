@@ -1,0 +1,12 @@
+---
+title: "monte logs, show, stop"
+description: "Run-scoped reads, and stopping a Run"
+---
+
+```bash
+monte logs <experiment>/<run> [--follow]
+monte show <experiment>/<run> [--json]
+monte stop <experiment>/<run>
+```
+
+`logs` prints the Run's event file as JSON lines. `show` prints one full row with all provenance fields. `stop` terminates a running Run, and the row reads as abandoned.

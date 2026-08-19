@@ -1,0 +1,35 @@
+---
+title: "monte status"
+description: "Read the Ledger: rows, deltas, Lineages, Cycles"
+---
+
+```bash
+monte status <experiment> [--json]
+```
+
+Prints the Run rows, the per-Cohort delta lines, the `lineage:` lines, the `cycles:` line with its strike verdicts, and the checkpoint list under `checkpoints:`.
+
+**What a Cycle is.** A Cycle is one turn of the loop: the first admissible eval at a new highest step along one Lineage. A retry at the same step is not a new Cycle, and two branches off one Checkpoint each get their own, because a Cycle is keyed on the path and not on the Cohort.
+
+**What a strike is.** Each Cycle carries a verdict. `STRIKE` means the paired dev delta against the Baseline is not significantly positive. `ok` means it is. A regression large enough to be significant is also a strike, because it is not an improvement either. A Cycle whose per-task files cannot be read prints neither verdict: it exists, but it is unjudged. Strikes are labels you read, not a countdown. Nothing adds them up, no number of them ends anything, and you decide when to stop.
+
+**What paired means.** A delta line is paired when Monte can read the per-task results files of both evals, and it is labelled unpaired when it cannot. Both evals scored the same frozen tasks, so Monte compares them task by task and counts the flips. A task the Baseline got wrong and the newer eval got right counts as `fixed`. The reverse counts as `broken`. Tasks that came out the same way both times cancel. The delta is `(fixed - broken) / n`, where `n` is the number of tasks scored, and that is the same number you get by subtracting the two scores. Pairing does not change the delta. What counting the flips buys is the interval printed beside it, which is usually, though not always, tighter than one computed without pairing.
+
+Each `lineage:` line prints one descent path, as a start point followed by one arrow per training Run:
+
+```
+lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
+(=move=> is a stage boundary: weights-only warm start, ADR 0002)
+```
+
+Read the line as follows:
+
+- A hop label is `algorithm:source`, the Move that hop made. It comes from the Run's own plan.
+- A single-shaft arrow `-label->` is a continuation. The number after it is the absolute step the hop ended on.
+- A double-shaft arrow `=label(+N)=>` is a stage boundary. `+N` is how many steps that hop trained after the boundary.
+- A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate Checkpoint.
+- A path that starts `base` trained from the base model.
+- A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
+- `ADR 0002` in the legend points at an internal platform decision record that this site does not publish. You do not need it to read the line. A stage boundary is a Recipe change that starts from the parent Checkpoint's weights alone.
+
+The legend prints only when the path crosses a stage boundary.

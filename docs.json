@@ -42,10 +42,16 @@
         "group": "CLI Reference",
         "pages": [
           "cli/overview",
-          "cli/experiments",
-          "cli/environments",
-          "cli/boxes",
-          "cli/reference"
+          "cli/experiment",
+          "cli/eval",
+          "cli/train",
+          "cli/status",
+          "cli/logs",
+          "cli/promote",
+          "cli/env",
+          "cli/dataset",
+          "cli/sync",
+          "cli/box"
         ]
       }
     ]
@@ -94,6 +100,22 @@
     {
       "source": "/environments/authoring",
       "destination": "/concepts/environments"
+    },
+    {
+      "source": "/cli/experiments",
+      "destination": "/cli/experiment"
+    },
+    {
+      "source": "/cli/environments",
+      "destination": "/cli/env"
+    },
+    {
+      "source": "/cli/boxes",
+      "destination": "/cli/box"
+    },
+    {
+      "source": "/cli/reference",
+      "destination": "/cli/overview"
     }
   ],
   "logo": {
