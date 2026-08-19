@@ -28,6 +28,8 @@ Three groups, and a command run from the wrong group is the most common source o
 
 `--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
 
+The first row has a precondition the others do not. `env add`, `env list --available`, and `env install` all read or write the NeMo Gym checkout, so they need a machine whose `MONTE_LOCAL` holds the stack. Installing a mock-only Environment is the exception, because it has nothing to register.
+
 ## Exit codes
 
 | Code | Name | Fires when |
@@ -35,20 +37,21 @@ Three groups, and a command run from the wrong group is the most common source o
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag, a missing argument, a missing `--recipe` or `--source` |
-| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target |
+| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target, a frozen Environment file on the data root that does not match the manifest |
 | 3 | `E_NO_BASELINE` | train without a matching-Cohort Baseline |
 | 4 | `E_FROZEN_FIELD` | a launch would change a frozen Experiment field |
 | 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
 | 6 | `E_PREFLIGHT` | preflight failed: the lock, fingerprint drift, the free-space minimum, a foreign GPU process, a test eval on a Cohort with no `test@0` baseline, or a final-claim selection whose candidates are not all pairable |
 | 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
 | 8 | `E_MEASUREMENT_EXISTS` | `experiment init` on a name that exists |
-| 9 | `E_NOT_FOUND` | no such Experiment, Run, Environment, Dataset, or Checkpoint |
+| 9 | `E_NOT_FOUND` | no such Experiment, Run, Environment, Dataset, or Checkpoint. Also a Vault fetch with no key to read with, which cannot tell the two apart |
 | 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
-| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or something the Vault holds is wrong: bytes that fail their hash, or a manifest that is not one, in shape or in what it pins. A frozen Environment already on the data root refuses under code 3 instead |
 | 12 | `E_SERVING` | the serving stack produced no measurement: no snapshot, vLLM down, Gym failed, or no rollouts |
 | 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
-| 14 | `E_STORAGE` | the durable tier is unreachable: credentials, package, or path |
+| 14 | `E_STORAGE` | a cloud bucket is unreachable in either direction: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
 | 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
+| 17 | `E_ENVELOPE` | the action falls outside an active Envelope's approved terms |
 
-Codes 3 through 16 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
+Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
