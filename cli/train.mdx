@@ -14,7 +14,7 @@ Trains one chunk: 50 steps by default, set by the Experiment's `steps_per_chunk`
 
 **`--recipe` is the method, per Run.** It takes a packaged or repo Recipe name, or a path to a YAML file. `monte config` lists the resolvable names and the search path. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan.
 
-**`--source` is what this Run trains on.** It names either a trainable Environment's curriculum, or a frozen [Dataset](/cli/dataset). This experiment's own Environment is a source like any other, and you state it like any other. The namespace is every trainable Environment plus every frozen Dataset on the data root. One name claimed by both refuses.
+**`--source` is what this Run trains on.** It names either a trainable Environment's curriculum, or a frozen [Dataset](/cli/env#monte-dataset). This experiment's own Environment is a source like any other, and you state it like any other. The namespace is every trainable Environment plus every frozen Dataset on the data root. One name claimed by both refuses.
 
 The algorithm and the source must agree. A `grpo` or `distillation` Recipe reads its reward from a trainable Environment's Gym resources server as it trains, so it takes an Environment. An `sft` Recipe consumes demonstrations with no grader running, so it takes a Dataset frozen with `--kind sft`. A crossed pairing refuses, and the refusal names the fix.
 
