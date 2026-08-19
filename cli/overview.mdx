@@ -7,12 +7,12 @@ The `monte` CLI is the only write path into the platform. This page states the c
 
 ## Conventions
 
-- **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, `box`, and `weights` groups have no default on purpose. Their subcommands are different intents.
+- **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, `box`, `weights`, and `envelope` groups have no default on purpose. Their subcommands are different intents.
 - **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the Run persists, and its hash lands in the row as `config_hash`.
-- **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <measurement-name>`, typed out. A mismatch is the same `E_CONFIRM`.
+- **Typed confirm.** `promote` and `envelope close` do not ask y/n. Each takes `--confirm` with a name typed out: the Measurement's for `promote`, the Envelope's id for `envelope close`. A mismatch is the same `E_CONFIRM`.
 - **How to name a Run.** One form everywhere: `<measurement>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every Run, and `monte status` prints it. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
 - **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
-- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, and `weights push`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
+- **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, `weights push`, and `envelope list`, `envelope show`, and `envelope finalize`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
@@ -22,9 +22,9 @@ Three groups, and a command run from the wrong group is the most common source o
 
 | Group | Runs from | Commands |
 | --- | --- | --- |
-| Anywhere | a tool install or a checkout | `experiment`, `status`, `logs`, `show`, `env`, `dataset`, `config`, `sync` |
+| Anywhere | a tool install or a checkout | `experiment`, `status`, `logs`, `show`, `env`, `dataset`, `config`, `sync`, `envelope list`, `envelope show` |
 | Laptop, checkout only | a clean git checkout pushed to origin | `--remote` on `eval` and `train`, `box` |
-| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote`, `weights push` |
+| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote`, `weights push`, `envelope finalize` |
 
 `--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` and `weights push` copy weights off disk, so they run where the weights live.
 
@@ -220,7 +220,8 @@ Both resolve a GCS service-account key: `--key-file`, then `MONTE_GCS_KEY_FILE`,
 ### monte box
 
 ```bash
-monte box up [--type T] [--region R] [--cold] [--keep-alive] [--ssh-key K] [--json]
+monte box up [--type T] [--region R] [--cold] [--keep-alive] [--ssh-key K]
+             [--envelope <approved.json> [--hours H | --until <stamp>]] [--json]
 monte box status [--json]
 monte box down <instance-id|name> [--json]
 ```
@@ -233,11 +234,43 @@ The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data
 
 `--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a box you are working on interactively dies mid-session. The flag writes `/etc/monte/keep-alive` after arming the watchdog, which disables the idle check. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
 
+`--envelope` opens an [Envelope](#monte-envelope) on the box as it launches. It takes the approved Envelope JSON, and the launch is matched against those terms by the Envelope's id. The check runs twice on purpose: once before any box exists, so a launch outside the terms costs nothing, and again once the box is real, because the hourly rate is a term only a live box can answer.
+
+Opening an Envelope changes what the box is. The window lands in the identity file, so the watchdog holds idle reaping off until the window closes and then runs the finalizer. The record is planted where the search can read it and never edit it, so `monte` on that box refuses the test Split and `promote` on that Measurement. A non-root user is provisioned for the search to ssh in as, with a shell and the `monte` CLI, and with no sudo and no secrets.
+
+`--hours` sets the window length from now, and `--until` takes an ISO stamp with an offset. State one, and only with `--envelope`: a window is only meaningful as one Envelope's window, so either flag on its own refuses with `E_ENVELOPE`. Neither may stretch the window past the approved close. Re-anchoring can only shorten it, because the minutes capacity shopping burns should not be spent against the approval.
+
+The box's hard TTL is raised where it has to cover the window and the finalizer's grace period. It stays a backstop, and it stops being one that ends an approved search early.
+
 `status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. It lists anything else read-only, as foreign.
 
 `down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. It refuses a foreign instance.
 
 All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
+
+### monte envelope
+
+```bash
+monte envelope list [--json]
+monte envelope show <envelope-id> [--json]
+monte envelope finalize <envelope-id> [--json]
+monte envelope push-transcript <envelope-id>
+monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
+```
+
+An Envelope is the approved terms of one automated search: which Measurement it may work on, how long its window stays open, and what it may spend. It is opened on a box by `monte box up --envelope`, and it binds every `monte` command on that host, not only the search's own.
+
+While an Envelope is active on a Measurement, three things refuse with `E_ENVELOPE`. `monte eval --split test` refuses, because dev selects and test never decides. `monte promote` refuses, because promotion is a human act on audited evidence. Any new Run refuses once the window has closed, because the window is the spend that was approved.
+
+`list` prints every Envelope record this host can see, as one list: the box's root-owned registry and the host's own. `show` prints one in full, the approved terms verbatim plus the state Monte owns.
+
+`finalize` is the watchdog's verb, not yours. At the record's `finalize_at`, the box's watchdog runs it, in this order: stop the search, mark the Envelope closed, run the blind final claim, push the Checkpoint that claim selects, sync the results tree, sync the transcript, release the box to idle. Marking it closed comes before the claim, which is what lets the claim run the test eval the search itself is refused. It is idempotent, and it has to be: the watchdog fires every five minutes and will call it twice. A step that fails is reported, and the box is released either way.
+
+`push-transcript` uploads one Envelope's search transcript to the results bucket. It is its own verb because the transcript is written where the search runs, and the finalizer runs where the compute is, so the finalizer's transcript step finds nothing to send there. It deletes nothing and skips an unchanged file, so running it twice costs one listing.
+
+`close` marks an Envelope consumed without finalizing it. It is an escape hatch, for an Envelope whose finalizer never ran: an Envelope stays active forever until something closes it, and active means that Measurement's test Split stays refused. Closing by hand clears the guards and **skips the blind final claim entirely**. That is why the confirm is hard, like `promote`'s: pass `--confirm <envelope-id>`, typed out, or the command refuses with `E_CONFIRM`. `--reason` is recorded on the record, and defaults to `closed by hand`.
+
+Closing on this host says nothing about what the box did. An Envelope opened on a box leaves a record on both hosts, and each host closes only its own. Whether the touch is actually unspent depends on the box's finalizer, and `monte status` names the recorded claim if one was made.
 
 ### monte weights
 
