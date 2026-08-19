@@ -7,7 +7,7 @@ An Environment is the world an agent acts on. The agent takes an action, the Env
 Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two things that make agent-assisted training possible:
 
 - **Split roles.** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report, and `test` is held back for that.
-- **A fingerprint.** The tasks, the grader, and the harness configuration each change a score without looking like a change to the measurement. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
+- **A fingerprint.** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
 
 ## Parts of an Environment
 
@@ -21,7 +21,7 @@ An Environment has three parts, and the agent harness sits beside them.
 
 **Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a Task is done. A simple harness only loops until the Task completes, while others add planning, memory, and skills. Each Run states which model it uses.
 
-Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or a Measurement. One Environment can serve several Measurements: the same tasks, frozen under different settings.
+Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or an Experiment. One Environment can serve several Experiments: the same tasks, frozen under different settings.
 
 You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
 
@@ -31,9 +31,9 @@ A frozen Environment lives in the Vault, a cloud bucket that outlives any box, a
 
 The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install` fetches them back and proves every hash before it writes them, which is what makes a local copy something you can give up and ask for again. A Dataset works the same way, with `monte dataset show` as the command that fetches it. Losing a box, or the disk its data root sits on, therefore costs you no frozen input that reached the Vault. Freezing is the only step that writes there, and after it the flow runs one way, from the Vault to a data root to the Gym checkout, so no copy can change the one above it.
 
-Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [CLI reference](/cli/overview#environment-variables) names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment you ship as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to the `install()` you wrote. Those are the copies you are holding yourself, and reading `monte env list --vault` against a bare `monte env list` is how you find out which of yours they are.
+Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [`monte sync, push`](/cli/commands#monte-sync-push) section names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment you ship as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to the `install()` you wrote. Those are the copies you are holding yourself, and reading `monte env list --vault` against a bare `monte env list` is how you find out which of yours they are.
 
-The reason any of this matters is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, which is a different Measurement, and every Baseline taken under the old one stops meaning anything. The bytes cannot be made a second time, so they have to outlive the machine that made them.
+The reason any of this matters is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, which is a different Experiment, and every Baseline taken under the old one stops meaning anything. The bytes cannot be made a second time, so they have to outlive the machine that made them.
 
 That is the rule the Vault exists to enforce: a data root is where things are materialized, not where they live. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. A Run launched with `--push`, which is what a remote Run runs with, sends its own results as it goes, and anything else waits for a `monte push` you type yourself.
 
@@ -52,11 +52,11 @@ A training Run uses the same grader, and although eval and training each run the
 ## Related pages
 
 <CardGroup cols={2}>
-  <Card title="Authoring an Environment" href="/environments/authoring">
-    Build one: the package shape, the rules, and how to test it.
-  </Card>
-  <Card title="Measurement" href="/concepts/measurement">
+  <Card title="Experiment" href="/concepts/experiment">
     What the freeze covers: the Split roles and the fingerprint.
+  </Card>
+  <Card title="monte env" href="/cli/commands#monte-env">
+    Freeze an Environment, list what is registered, install its assets.
   </Card>
 </CardGroup>
 
