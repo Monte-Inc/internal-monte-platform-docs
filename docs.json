@@ -42,7 +42,7 @@
       {
         "group": "Agentic Post-Training",
         "pages": [
-          "concepts/naive-loop"
+          "concepts/core-loop"
         ]
       }
     ]
@@ -150,7 +150,11 @@
     },
     {
       "source": "/concepts/improver",
-      "destination": "/concepts/naive-loop"
+      "destination": "/concepts/core-loop"
+    },
+    {
+      "source": "/concepts/naive-loop",
+      "destination": "/concepts/core-loop"
     }
   ],
   "logo": {
