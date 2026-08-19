@@ -39,14 +39,10 @@
         ]
       },
       {
-        "group": "CLI Reference",
+        "group": "CLI",
         "pages": [
           "cli/overview",
-          "cli/experiment",
-          "cli/eval",
-          "cli/train",
-          "cli/env",
-          "cli/box"
+          "cli/commands"
         ]
       }
     ]
@@ -98,15 +94,15 @@
     },
     {
       "source": "/cli/experiments",
-      "destination": "/cli/experiment"
+      "destination": "/cli/commands#monte-experiment"
     },
     {
       "source": "/cli/environments",
-      "destination": "/cli/env"
+      "destination": "/cli/commands#monte-env"
     },
     {
       "source": "/cli/boxes",
-      "destination": "/cli/box"
+      "destination": "/cli/commands#monte-box"
     },
     {
       "source": "/cli/reference",
@@ -114,23 +110,43 @@
     },
     {
       "source": "/cli/status",
-      "destination": "/cli/experiment#monte-status"
+      "destination": "/cli/commands#monte-status"
     },
     {
       "source": "/cli/logs",
-      "destination": "/cli/experiment#monte-logs-show-stop"
+      "destination": "/cli/commands#monte-logs-show-stop"
     },
     {
       "source": "/cli/promote",
-      "destination": "/cli/experiment#monte-promote"
+      "destination": "/cli/commands#monte-promote"
     },
     {
       "source": "/cli/dataset",
-      "destination": "/cli/env#monte-dataset"
+      "destination": "/cli/commands#monte-dataset"
     },
     {
       "source": "/cli/sync",
-      "destination": "/cli/box#monte-sync-push"
+      "destination": "/cli/commands#monte-sync-push"
+    },
+    {
+      "source": "/cli/experiment",
+      "destination": "/cli/commands#monte-experiment"
+    },
+    {
+      "source": "/cli/eval",
+      "destination": "/cli/commands#monte-eval"
+    },
+    {
+      "source": "/cli/train",
+      "destination": "/cli/commands#monte-train"
+    },
+    {
+      "source": "/cli/env",
+      "destination": "/cli/commands#monte-env"
+    },
+    {
+      "source": "/cli/box",
+      "destination": "/cli/commands#monte-box"
     }
   ],
   "logo": {
