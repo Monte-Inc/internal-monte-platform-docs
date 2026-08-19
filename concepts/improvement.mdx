@@ -9,17 +9,22 @@ With that many variables in play, the record of what you changed matters as much
 The figure below is a high-level view of that work with the driving agent running it. Two things move at different speeds inside it: the model's weights, and the method used to change them.
 
 ```mermaid actions={false}
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594', 'fontSize': '18px'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 18}, 'rankSpacing': 110, 'nodeSpacing': 85, 'padding': 28}}}%%
 flowchart LR
     subgraph INNER["Moves the weights"]
         direction TB
-        TRAIN["train Split"] --> RUN["Training Run"] --> CKPT["Checkpoint"]
+        TRAIN["train Split"]:::entry --> RUN["Training Run"]:::score --> CKPT["Checkpoint"]:::model
     end
     subgraph OUTER["Moves the method"]
         direction TB
-        EVAL["Eval on dev"] --> LEDGER["Ledger"] --> AGENT["Driving agent decides<br/>the next Move"]
+        EVAL["Eval on dev"]:::score --> LEDGER["Ledger"]:::entry --> AGENT["Driving agent decides<br/>the next Move"]:::model
     end
     CKPT --> EVAL
     AGENT -->|"chosen Checkpoint, Source, and Recipe"| RUN
+
+    classDef entry fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef model fill:#70A6C1,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef score fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
 ```
 
 ## Moving the weights
@@ -53,11 +58,16 @@ Every Move is one of three kinds.
 All three appear below, in a deliberately simple picture of what one of these records could look like. Each box is a Checkpoint labelled with the step it was saved at, and each arrow is one training Run labelled here with the Recipe that ran. (`monte status` labels each hop with its Move, as `algorithm:source`.)
 
 ```mermaid actions={false}
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#315594', 'primaryTextColor': '#F0F1F2', 'primaryBorderColor': '#315594', 'lineColor': '#70A6C1', 'textColor': '#17181B', 'clusterBkg': 'transparent', 'clusterBorder': '#70A6C1', 'edgeLabelBackground': 'transparent', 'tertiaryColor': '#315594', 'tertiaryTextColor': '#F0F1F2', 'tertiaryBorderColor': '#315594'}, 'flowchart': {'subGraphTitleMargin': {'top': 0, 'bottom': 12}, 'rankSpacing': 70, 'nodeSpacing': 55, 'padding': 18}}}%%
 flowchart TB
-    BASE["base model"] -->|"sft-format"| S["50 steps"]
-    S -->|"grpo-math"| A["100 steps"]
-    A -->|"grpo-math"| B["150 steps<br/>no improvement"]
-    S -->|"grpo-lower-lr"| C["100 steps"]
+    BASE["base model"]:::entry -->|"sft-format"| S["50 steps"]:::model
+    S -->|"grpo-math"| A["100 steps"]:::model
+    A -->|"grpo-math"| B["150 steps<br/>no improvement"]:::none
+    S -->|"grpo-lower-lr"| C["100 steps"]:::model
+
+    classDef entry fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef model fill:#70A6C1,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
+    classDef none fill:#1E2024,stroke:#4A4D50,stroke-width:1.5px,color:#F0F1F2;
 ```
 
 The first arrow is a fine-tuning stage, the second is the boundary where the method changes to reinforcement learning, and the fork at 50 steps is a branch retried at a lower learning rate.
