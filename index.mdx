@@ -2,6 +2,8 @@
 title: "Introduction"
 ---
 
+<img src="/images/monte-launch.png" alt="Monte" noZoom />
+
 Monte is the agent-native platform for post-training. It runs the model improvement loop: train, evaluate, compare. Every result records the conditions that produced it, and that is what makes an agent effective at post-training.
 
 AI agents handle the individual tasks of post-training research well. They can change a training method, launch a run, or inspect an evaluation. They are much less reliable at managing the improvement process as a whole.
@@ -11,10 +13,6 @@ An agent can become convinced of an early diagnosis and keep working from it aft
 Monte gives agents a consistent view of that process. It records the context behind each result and how the work changes over time, so an agent can revisit a decision and choose what to try next.
 
 Monte fixes what has to be held still for a comparison to mean anything. Results are compared only against others produced the same way: the same starting model, the same frozen tasks, the same evaluation settings. Each such group carries its own baseline, and a comparison never crosses between groups. What Monte does not constrain is the training method or the research strategy.
-
-<Note>
-  Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
-</Note>
 
 ## How it works
 
