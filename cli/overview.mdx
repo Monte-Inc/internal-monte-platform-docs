@@ -14,6 +14,7 @@ The `monte` CLI is the only write path into the platform. This page states the c
 - **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
 - **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, every `box` subcommand, `weights push`, and `envelope list`, `envelope show`, and `envelope finalize`. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` prints the Ledger report alone. The checkpoint list, the final claim line, and the mirror note are rendered by the human view only.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
+- **`-h` / `--help`.** Both work on every command and every group. A group called bare prints its help rather than doing anything.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
 ## Where a command runs
@@ -345,13 +346,17 @@ Credentials. Each one resolves from a direct value first, then from 1Password. M
 | `MONTE_OP_ACCOUNT` | 1Password account for every `op` lookup above | unset |
 | `MONTE_OP_VAULT` | 1Password vault for every `op` lookup above | unset |
 
-Box provisioning:
+Box provisioning and Envelope paths. The last four move where this host keeps its own records. None of them is an escape hatch: `/etc/monte/envelopes` is always read, and an override may only add a second place to look, never displace or hide the system one.
 
 | Variable | Meaning | Default |
 |---|---|---|
 | `MONTE_SSH_KEY_NAME` | account SSH key name, needed when the account has several | unset |
 | `MONTE_NFS_NAME` | the NFS a warm box attaches | `monte-post-training` |
-| `MONTE_STATE_DIR` | directory holding the box identity file | `~/.monte` |
+| `MONTE_STATE_DIR` | monte's own local state: box launch records and Envelope records | `~/.monte` |
+| `MONTE_ETC` | this host's box-local state directory: the release stamp it writes, the box identity it reads | `/etc/monte` |
+| `MONTE_ENVELOPE_DIR` | this host's own Envelope registry | `<state dir>/envelopes` |
+| `MONTE_IMPROVER_DIR` | the search's state directory | `<data root>/improver` |
+| `MONTE_IMPROVER_LOGS` | where `envelope push-transcript` looks for the transcript | `<improver dir>/logs` |
 
 ## Exit codes
 
