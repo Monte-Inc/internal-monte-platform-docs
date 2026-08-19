@@ -1,0 +1,110 @@
+---
+title: "The Improver"
+---
+
+The other pages here call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+
+## One turn of the loop
+
+The Improver works one Measurement at a time, and a turn of its loop is four steps.
+
+1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
+2. **Decide one Move**: which Checkpoint to start from, which Source to train on, and which Recipe to run.
+3. **Train one chunk** with those three coordinates stated in full, since Monte infers none of them.
+4. **Score the new Checkpoint on `dev`**, read the paired delta, and start again.
+
+The Move is where the search happens, and it takes four shapes. Continuing an arm keeps the Recipe and starts from that arm's newest Checkpoint. Branching keeps the Recipe and starts from an earlier Checkpoint. You do that when a Recipe looked healthy up to a point and then stopped. A fresh arm starts from the base model under any Recipe. A stage boundary continues a Checkpoint under a different Recipe, so the weights carry over while the trainer's step counter restarts. That is how a supervised stage becomes the foundation for a reinforcement learning one.
+
+Writing Recipes is part of the work rather than a setup step that happens first. The Improver reads what the last Move scored. It can respond by authoring a new Recipe, not only by picking a different one off the shelf. A new Recipe is a new named file rather than an edit to an existing one. A Recipe is pinned by the hash of its content, so editing one in place changes its identity. The next Run on that arm then becomes a stage boundary instead of the continuation it was meant to be.
+
+Every one of those decisions is read off `dev`. The Improver never sees a `test` number that its own search produced. `monte status` may show it the Baseline's `test@0`, which was recorded before any training began, and it acts on none of it. The final claim on `test` is made after the Improver has stopped, by machinery it does not drive. That is what makes the claim blind.
+
+## The Envelope
+
+An Envelope is the approved terms of one search, fixed before it starts and never renegotiated while it runs. It is the unit of approval and the unit of audit, so every action the Improver takes is judged against the Envelope it ran under.
+
+| Term | What it states |
+| --- | --- |
+| **Measurement** | The Measurement the search improves. Its `dev` Split is the Improver's only score. |
+| **Goal** | The sentence the Improver optimizes for, such as beating a named Baseline `dev` score. |
+| **Window** | When the search opens and when it closes, both in UTC with an explicit offset. The close is the hard stop. |
+| **Spend ceiling** | The approved dollar figure, stated outright rather than left as an inference from the rate. |
+| **Box** | The standing GPU box the Runs execute on, with its instance type and its hourly rate. |
+| **Claim** | Whether the Envelope is **closing** or **open**. |
+
+The claim field is one bit, decided at approval. It is the difference between a search that ends in a number and one that does not. A closing Envelope ends with the blind final claim, which spends the Cohort's last `test` read. An open Envelope ends with a sync alone, and that read stays unspent for a later Envelope to finish the work. Neither one is decided mid-flight.
+
+The box is not part of the Envelope's lifetime. One GPU box is acquired for the search program and held. An Envelope is an approved window of time on that box, not a box that lives and dies with the search. That separation exists because GPU capacity is genuinely scarce. Making every approval acquire its own box turns each one into a gamble, and pays the setup cost again each time.
+
+## What the platform refuses
+
+Three refusals are live for as long as an Envelope is active, and they hold regardless of which command asked or which harness ran it.
+
+- **`monte eval <measurement> --split test` is refused**, in every spelling, `--smoke` included. A smoke Run skips the two-read budget on `test`, so it is the one spelling that would otherwise work.
+- **`monte promote` is refused.** Promotion is a human act on audited evidence, and it waits for the search to close.
+- **No new Run starts past the window's close.** The window is the approved spend, so a Run started after it is spend nobody approved.
+
+Each of those is keyed to one Envelope's id, and an Envelope binds only the Measurement it names on the box it runs on. There is no global mode anywhere in this. A person evaluating a different Measurement is never refused by it, and neither is a second search on a second box.
+
+Active means the record says active, and it does not mean the window is still open. An Envelope whose time has run out stays active until the finalizer marks it closed. A finalizer that never ran therefore leaves `test` refused rather than quietly available. Closing the record by hand is the way out of that, and it is a deliberate act with a typed confirmation.
+
+## Three layers, not one
+
+The refusals above are the middle layer of three, and there are three because the outer two are known to be incomplete.
+
+The **harness guard** reads each shell command before it runs and blocks the ones the search may not make. It sees through an `ssh` invocation to the command quoted inside it. It is a belt, and its limits are written down. A command that hides a Split behind an environment variable goes past it. So does one that writes a script and then runs it.
+
+**Monte itself** is the wall, and it is where the three refusals above live. They fire inside the platform on the terms of the Envelope record, so what the harness misses the platform still refuses.
+
+The **launcher** is the clock. It kills the Improver's process at the moment the window closes, and a Run still in flight at that instant dies as an aborted Run. Finishing the current Run first would make the ceiling soft, so nothing is given that grace.
+
+Underneath all three, the account the Improver runs as on the box is fenced. It has a full login shell and the whole `monte` CLI, and it has neither sudo nor any credential. That combination is deliberate: an account with sudo could read the key that spends money. It could also stop the watchdog that ends the search, or rewrite the terms of its own Envelope. This one can read its Envelope and can never write it.
+
+## How a search ends
+
+After the window closes, a finalizer runs a fixed sequence on the box.
+
+1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
+2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
+3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the Checkpoint Monte selects.
+4. **Push the claimed Checkpoint's weights** to Hugging Face, where weights live.
+5. **Sync the results tree** to the durable tier, which is what survives the box.
+6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
+7. **Release the box to idle**, rather than terminating it, since the box outlives the Envelope.
+
+A step that refuses or fails is recorded and the sequence continues past it. A failed claim should not also cost the search its sync, and an unreleased box would stay out of normal idle reaping.
+
+The transcript is synced because it and the Ledger answer different questions. The Ledger records what was tried and what each attempt scored. The transcript records why the Improver moved as it did, which is what a later search reads before deciding where to pick up.
+
+## Reading and ending an Envelope
+
+```bash
+monte envelope list [--json]
+monte envelope show <envelope-id> [--json]
+monte envelope finalize <envelope-id> [--json]
+monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
+```
+
+`list` prints every Envelope record this host can see, each with its state, its claim bit, its Measurement, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
+
+`finalize` runs the sequence above. It belongs to the box watchdog rather than to a person, and it is idempotent, because that watchdog will call it more than once. An already-closed Envelope is reported and not re-finalized, so the last `test` read cannot be spent twice.
+
+`close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer ran on another host, or never ran at all, and an Envelope is holding a `test` Split hostage.
+
+## What is not here yet
+
+One Envelope runs at a time, on one box, and its search is serial: one Run, then the next. Several boxes comparing Recipes concurrently under a single Envelope is a planned expansion rather than something you can ask for today. The design leaves room for it, but the platform has not shipped it.
+
+## Related pages
+
+<CardGroup cols={3}>
+  <Card title="Improvement" href="/concepts/improvement">
+    The loop the Improver drives.
+  </Card>
+  <Card title="Measurement" href="/concepts/measurement">
+    What `dev` and `test` are for.
+  </Card>
+  <Card title="Glossary" href="/concepts/glossary">
+    The vocabulary this page uses.
+  </Card>
+</CardGroup>
