@@ -2,7 +2,7 @@
 title: "The Improver"
 ---
 
-The Improver is the agent that works the outer loop the other pages describe. It reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+The Improver is the agent that works the outer loop the other pages describe. It reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, and its Runs execute on a standing GPU box that was approved and acquired before the search began. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
 ## One turn of the loop
 
@@ -54,13 +54,13 @@ Active means the record says active, and it does not mean the window is still op
 
 The refusals above are the middle layer of three, and there are three because the outer two are known to be incomplete.
 
-The **harness guard** reads each shell command before it runs and blocks the ones the search may not make. It sees through an `ssh` invocation to the command quoted inside it. It is a belt, and its limits are written down. A command that hides a Split behind an environment variable goes past it. So does one that writes a script and then runs it.
+The **harness guard** reads each command the search issues and blocks the ones it may not make. It is a belt rather than a wall, and the refusals do not rest on it.
 
 **Monte itself** is the wall, and it is where the three refusals above live. They fire inside the platform on the terms of the Envelope record, so what the harness misses the platform still refuses.
 
-The **launcher** is the clock. It kills the Improver's process at the moment the window closes, and a Run still in flight at that instant dies as an aborted Run. Finishing the current Run first would make the ceiling soft, so nothing is given that grace.
+The **launcher** is the clock. It stops the Improver at the moment the window closes, and a Run still in flight at that instant ends as an aborted Run. Finishing the current Run first would make the ceiling soft, so nothing is given that grace.
 
-Underneath all three, the account the Improver runs as on the box is fenced. It has a full login shell and the whole `monte` CLI, and it has neither sudo nor any credential. That combination is deliberate: an account with sudo could read the key that spends money. It could also stop the watchdog that ends the search, or rewrite the terms of its own Envelope. This one can read its Envelope and can never write it.
+Underneath all three, the Improver can read the terms of its Envelope and can never write them. No search widens the terms it was approved under.
 
 ## How a search ends
 
@@ -68,7 +68,7 @@ After the window closes, or as soon as the Improver concludes, a finalizer runs 
 
 1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
 2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
-3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint. When the Nomination is not the Checkpoint the rule would have picked, the finalizer scores the rule's pick on `test` beside it. That counterfactual read is diagnostic: it selects nothing, pushes no weights, and spends a `test` read beyond the Split's two.
+3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint. When the Nomination is not the Checkpoint the rule would have picked, the finalizer scores the rule's pick on `test` beside it. That counterfactual read is diagnostic: it selects nothing, pushes no weights, and is the one sanctioned addition to the Split's two reads.
 4. **Push the presented Checkpoint's weights** to Hugging Face, where weights live.
 5. **Sync the results tree** to the durable tier, which is what survives the box.
 6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
@@ -89,13 +89,13 @@ monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 
 `list` prints every Envelope record this host can see, each with its state, its claim bit, its Measurement, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
 
-`finalize` runs the sequence above. It belongs to the box watchdog rather than to a person, and it is idempotent, because that watchdog will call it more than once. An already-closed Envelope is reported and not re-finalized, so the last `test` read cannot be spent twice.
+`finalize` runs the sequence above. It belongs to the platform rather than to a person, and it is idempotent, because it can be called more than once. An already-closed Envelope is reported and not re-finalized, so the last `test` read cannot be spent twice.
 
-`close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer ran on another host, or never ran at all, and an Envelope is holding a `test` Split hostage.
+`close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer never completed and an Envelope is holding a `test` Split hostage.
 
 ## What is not here yet
 
-One Envelope runs at a time, on one box, and its search is serial: one Run, then the next. Several boxes comparing Recipes concurrently under a single Envelope is a planned expansion rather than something you can ask for today. The design leaves room for it, but the platform has not shipped it.
+One Envelope runs at a time, on one box, and its search is serial: one Run, then the next.
 
 ## Related pages
 
