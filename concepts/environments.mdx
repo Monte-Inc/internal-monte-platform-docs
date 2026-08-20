@@ -4,7 +4,7 @@ title: "Environments"
 
 An Environment is the world an agent acts on. The agent takes an action, the Environment returns a new state and a reward, and the cycle repeats. The reward is the proxy for the desired behavior.
 
-Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two guarantees that make agent-assisted training possible:
+Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two structures that make agent-assisted training more reliable:
 
 - **Splits:** The improvement loop optimizes against `dev`, so `dev` cannot be the reported number, and `test` is held back for that.
 - **Fingerprint:** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
