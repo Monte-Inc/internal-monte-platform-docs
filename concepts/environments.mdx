@@ -6,20 +6,20 @@ An Environment is the world an agent acts on. The agent takes an action, the Env
 
 Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two things that make agent-assisted training possible:
 
-- **Split roles.** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report, and `test` is held back for that.
-- **A fingerprint.** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
+- **Splits.** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report, and `test` is held back for that.
+- **Fingerprint.** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
 
 ## Parts of an Environment
 
 An Environment has three parts, and the agent harness sits beside them.
 
-**Task material.** The tasks, plus the data needed to score each attempt. One Task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a Task into a model call belongs here too.
+**Tasks.** The tasks, plus the data needed to score each attempt. One Task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a Task into a model call belongs here too.
 
 **Grader.** It scores one attempt into a reward, usually between 0 and 1, by checking the output against the Task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment, and it serves two jobs at once, because its scores become both the eval metric and the training reward.
 
-**Tools and state.** The per-task world that the agent changes as it acts. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
+**Tools and State.** The per-task world that the agent changes as it acts. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
 
-**Agent harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a Task is done. A simple harness only loops until the Task completes, while others add planning, memory, and skills. Each Run states which model it uses.
+**Harness.** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a Task is done. A simple harness only loops until the Task completes, while others add planning, memory, and skills. Each Run states which model it uses.
 
 Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or an Experiment. One Environment can serve several Experiments: the same tasks, frozen under different settings.
 
