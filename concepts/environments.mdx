@@ -2,11 +2,11 @@
 title: "Environments"
 ---
 
-An Environment is the world an agent acts on. The agent takes an action, the Environment returns a new state and a reward, and the cycle repeats. The reward is the proxy for the behavior you want.
+An Environment is the world an agent acts on. The agent takes an action, the Environment returns a new state and a reward, and the cycle repeats. The reward is the proxy for the desired behavior.
 
-Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two things that make agent-assisted training possible:
+Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two guarantees that make agent-assisted training possible:
 
-- **Splits:** The improvement loop optimizes against `dev`, so `dev` cannot be the number you report, and `test` is held back for that.
+- **Splits:** The improvement loop optimizes against `dev`, so `dev` cannot be the reported number, and `test` is held back for that.
 - **Fingerprint:** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
 
 ## Parts of an Environment
@@ -23,19 +23,19 @@ An Environment has three parts, and the agent harness sits beside them.
 
 Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or an Experiment. One Environment can serve several Experiments: the same tasks, frozen under different settings.
 
-You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
+Monte measures any environment from the NeMo Gym catalog, and a custom Environment ships as an installable package.
 
 ## Where a frozen input lives
 
 A frozen Environment lives in the Vault, a cloud bucket that outlives any box, and so does a frozen Dataset. That copy is the one Monte treats as true, and what follows holds for both kinds.
 
-The copy on your data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install` fetches them back and proves every hash before it writes them, which is what makes a local copy something you can give up and ask for again. A Dataset works the same way, with `monte dataset show` as the command that fetches it. Losing a box, or the disk its data root sits on, therefore costs you no frozen input that reached the Vault. Freezing is the only step that writes there, and after it the flow runs one way, from the Vault to a data root to the Gym checkout, so no copy can change the one above it.
+The copy on a data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install` fetches them back and proves every hash before it writes them, which is what makes a local copy disposable and recoverable. A Dataset works the same way, with `monte dataset show` as the command that fetches it. Losing a box, or the disk its data root sits on, therefore costs no frozen input that reached the Vault. Freezing is the only step that writes there, and after it the flow runs one way, from the Vault to a data root to the Gym checkout, so no copy can change the one above it.
 
-Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [`monte sync, push`](/cli/commands#monte-sync-push) section names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment you ship as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to the `install()` you wrote. Those are the copies you are holding yourself, and reading `monte env list --vault` against a bare `monte env list` is how you find out which of yours they are.
+Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [`monte sync, push`](/cli/commands#monte-sync-push) section names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment shipped as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to its `install()`. Those copies exist locally and nowhere else, and reading `monte env list --vault` against a bare `monte env list` is what separates them from the rest.
 
 The reason any of this matters is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, which is a different Experiment, and every Baseline taken under the old one stops meaning anything. The bytes cannot be made a second time, so they have to outlive the machine that made them.
 
-That is the rule the Vault exists to enforce: a data root is where things are materialized, not where they live. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. A Run launched with `--push`, which is what a remote Run runs with, sends its own results as it goes, and anything else waits for a `monte push` you type yourself.
+That is the rule the Vault exists to enforce: a data root is a materialization, not a home. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. A Run launched with `--push`, which is what a remote Run runs with, sends its own results as it goes, and anything else waits for an explicit `monte push`.
 
 ## How a graded rollout runs
 
@@ -53,7 +53,7 @@ A training Run uses the same grader, and although eval and training each run the
 
 <CardGroup cols={2}>
   <Card title="Experiment" href="/concepts/experiment">
-    What the freeze covers: the Split roles and the fingerprint.
+    What the freeze covers: the Splits and the fingerprint.
   </Card>
   <Card title="monte env" href="/cli/commands#monte-env">
     Freeze an Environment, list what is registered, install its assets.
