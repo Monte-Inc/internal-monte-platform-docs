@@ -6,7 +6,7 @@ Everything Monte does is recorded as a run, and every run is one row in its expe
 
 ## Environments
 
-An environment holds what a model is asked to do and what scores it. Everything here is a piece of one.
+The pieces of an environment: the problems it poses, one attempt at a problem, the code that scores that attempt, and the training tasks the environment carries.
 
 | Term | Meaning |
 | --- | --- |
@@ -18,7 +18,7 @@ An environment holds what a model is asked to do and what scores it. Everything 
 
 ## What stays fixed
 
-An experiment freezes what it measures, so two runs weeks apart are still the same test. Where the frozen files live is covered in [Environments](/concepts/environments#where-a-frozen-input-lives).
+What an experiment freezes so that two runs weeks apart are still the same test: the task lists, the hash that guards them, the demonstration rows a run can train on, and the score every later run is read against. Where the frozen files live is covered in [Environments](/concepts/environments#where-a-frozen-input-lives).
 
 | Term | Meaning |
 | --- | --- |
@@ -30,7 +30,7 @@ An experiment freezes what it measures, so two runs weeks apart are still the sa
 
 ## What you run
 
-Every command that spends GPU time lands as one row.
+One run and what it produces, the three choices behind it, the checks before it launches, the two kinds that never count as evidence, and the agent that strings a search of them together.
 
 | Term | Meaning |
 | --- | --- |
@@ -49,7 +49,7 @@ Every command that spends GPU time lands as one row.
 
 ## Reading the results
 
-None of these are stored. Each is read off the rows on request, so none can fall out of agreement with the record it came from.
+None of this is stored. The groupings a score belongs to, the comparisons against its baseline, and the verdict on the checkpoint that wins are all read off the rows on request, so none can fall out of agreement with the record it came from.
 
 | Term | Meaning |
 | --- | --- |
@@ -66,7 +66,7 @@ None of these are stored. Each is read off the rows on request, so none can fall
 
 ## The record
 
-Where every run ends up.
+Where a run's row and its per-task detail land, and how to read them with no box up.
 
 | Term | Meaning |
 | --- | --- |
