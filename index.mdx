@@ -18,9 +18,9 @@ Monte fixes what has to be held still for a comparison to mean anything. Results
 
 Monte holds what each training Run did, what each eval scored, and how a model performs on a given Task.
 
-An Environment carries what you need to score a Task: the Tasks, their answers, and the grader. One Environment can carry several Experiments. `monte experiment init` creates an Experiment and fixes which Tasks you score and how you score them. An Experiment over a trainable Environment is one whose Tasks you can also train on. An Experiment over an eval-only Environment is a fixed reference any model can be scored against.
+An Environment carries what you need to score a Task: the Tasks, their answers, and the grader. An exam Environment holds a published benchmark, and a curriculum Environment holds a training pile. One Environment can serve several Experiments. `monte experiment init` creates an Experiment over a set of exams and fixes each one's role: **visible** exams the loop scores freely and reasons over, and **sealed** exams the loop can never evaluate, held back for the final claim.
 
-An Experiment starts from a base model, which can be any model. You score that base model twice before any training: on the `dev` Split, which sets the Baseline, and on the `test` Split, which anchors the final claim. Then you train and score each new Checkpoint against the Baseline. A Recipe states how a Run trains: the algorithm, the optimizer, the batch settings, and how it is distributed across GPUs. Each Run records the Recipe it ran and the Source it trained on, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in the same shape for every Run. You can see from them which settings to change next.
+An Experiment starts from a base model, which can be any model. You score that base model on every exam before any training: a visible exam's Baseline is what later Runs are read against, and a sealed exam's Baseline anchors the final claim. Then you train and score each new Checkpoint against the Baseline. A Recipe states how a Run trains: the algorithm, the optimizer, the batch settings, and how it is distributed across GPUs. Each Run records the Recipe it ran and the Source it trained on, so the method behind a number is never lost. Monte writes the run plan, events, and training logs in the same shape for every Run. You can see from them which settings to change next.
 
 Everything in the box below happens under one Experiment.
 
@@ -34,13 +34,13 @@ flowchart TD
         BASE["Baseline"]:::score
         CP["Checkpoint"]:::model
         SCORE["Checkpoint score"]:::score
-        FINAL["Final score on test"]:::score
+        FINAL["Final score on the sealed exams"]:::score
 
         BM -->|"monte eval"| BASE
         BM -->|"monte train"| CP
         CP -->|"monte eval"| SCORE
         SCORE -->|"monte train"| CP
-        SCORE -->|"monte eval --split test"| FINAL
+        SCORE -->|"nominate, then the blind claim"| FINAL
     end
 
     ENV -->|"monte experiment init"| BM
@@ -54,7 +54,7 @@ flowchart TD
     classDef none fill:#1E2024,stroke:#4A4D50,stroke-width:1.5px,color:#F0F1F2;
 ```
 
-The test Split is read twice: once on the base model before any training, and once on the Checkpoint Monte selects at the end. The final eval on the test Split is the number you report. `monte promote` copies a Checkpoint's weights out with its provenance, behind a confirmation you type in full. Every Run, score, and cost is recorded in that same shape. The driving agent reads that record, runs the loop, and decides what to try next.
+A sealed exam is read twice: once on the base model before any training, and once at the end, on the Checkpoint the search nominates. That final eval is the number you report. `monte promote` copies a Checkpoint's weights out with its provenance, behind a confirmation you type in full. Every Run, score, and cost is recorded in that same shape. The driving agent reads that record, runs the loop, and decides what to try next.
 
 ## Start here
 
