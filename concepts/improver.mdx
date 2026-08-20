@@ -2,7 +2,7 @@
 title: "The Improver"
 ---
 
-The Improver is the outer-loop agent that works the loop the other pages describe. It reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+The Improver is the agent that works the outer loop the other pages describe. It reads a Measurement's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
 ## One turn of the loop
 
@@ -19,7 +19,7 @@ Writing Recipes is part of the work rather than a setup step that happens first.
 
 Every one of those decisions is read off `dev`. The Improver never sees a `test` number that its own search produced. `monte status` may show it the Baseline's `test@0`, which was recorded before any training began, and it acts on none of it. The final claim on `test` is made after the Improver has stopped, by machinery it does not drive. That is what makes the claim blind.
 
-Two verbs sit beside the Move. The Improver nominates the Checkpoint its Envelope presents, and it can nominate only one that already has an admissible `dev` eval, because a presented model is measured rather than liked. Re-nominating replaces the standing Nomination, and an Envelope whose Improver never nominated falls back to the claim rule instead. The Improver can also conclude, which ends the Envelope early on the conviction that more Moves will not improve the presented result, in either direction. The finalizer then runs at once rather than at the window's close, and the window stays the hard ceiling.
+Two verbs sit beside the Move. The Improver nominates the Checkpoint its Envelope presents, and the nominee must already have an admissible `dev` eval, because a presented model is measured rather than liked. Re-nominating replaces the standing Nomination, and an Envelope whose Improver never nominated falls back to the claim rule. The Improver can also conclude, which ends the Envelope early on the conviction that more Moves will not improve the presented result, in either direction. The finalizer then runs at once rather than at the window's close, and the window stays the hard ceiling.
 
 ## The Envelope
 
@@ -64,11 +64,11 @@ Underneath all three, the account the Improver runs as on the box is fenced. It 
 
 ## How a search ends
 
-After the window closes, or as soon as the Improver concludes, a finalizer runs a fixed sequence on the box. Two of its steps act on the presented Checkpoint, which is the standing Nomination when the Improver left one, and otherwise the Checkpoint with the highest paired `dev` delta over the Baseline, with ties going to the higher n and then to the newer Run.
+After the window closes, or as soon as the Improver concludes, a finalizer runs a fixed sequence on the box. Two of its steps act on the presented Checkpoint. That is the standing Nomination when the Improver left one, and otherwise the Checkpoint with the highest paired `dev` delta over the Baseline, with ties going to the higher n and then to the newer Run.
 
 1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
 2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
-3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint. When the Nomination is not the Checkpoint the rule would have picked, the finalizer scores the rule's pick on `test` beside it. That counterfactual read is diagnostic: it selects nothing, pushes nothing, and spends a `test` read beyond the Split's two.
+3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint. When the Nomination is not the Checkpoint the rule would have picked, the finalizer scores the rule's pick on `test` beside it. That counterfactual read is diagnostic: it selects nothing, pushes no weights, and spends a `test` read beyond the Split's two.
 4. **Push the presented Checkpoint's weights** to Hugging Face, where weights live.
 5. **Sync the results tree** to the durable tier, which is what survives the box.
 6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
