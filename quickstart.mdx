@@ -48,7 +48,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```
     Run this now, before any training. `monte eval` scores the `dev` Split unless you say otherwise, so the Baseline eval above did not touch `test`.
 
-    The `test` Split is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    The `test` Split gets two reads per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
 
     If you train before taking this first read, Monte refuses a test eval on the new Checkpoint with `E_PREFLIGHT`, and the test delta cannot be recovered in that Cohort.
   </Step>
@@ -98,7 +98,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     `lineage:` prints the Lineage, the path this Checkpoint took back to the base model. Each arrow is one training Run, labelled with the Move it made: the algorithm, then the source it trained on. Here one Run took the base model to step 50, training with `grpo` on the `demo` source.
 
-    `cycles:` prints the verdict on each Cycle, and a Cycle is the first eval that counts as evidence at a new highest step along one Lineage. `STRIKE` means the paired `dev` delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
+    `cycles:` prints the verdict on each Cycle, and a Cycle is the first eval that counts as evidence at a new highest step along one Lineage. `STRIKE` means the `dev` delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
 
     `(1 strike)` is a count of the strikes so far, not a countdown. A strike is a label you read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and you decide when to stop.
   </Step>

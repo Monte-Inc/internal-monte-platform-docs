@@ -24,7 +24,7 @@ An Experiment fixes three things when you create it.
 2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
+An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the Improver changes between Runs.
 
 An Experiment names no model either: each Run binds its own, so many models can compete under one Experiment.
 
@@ -35,10 +35,10 @@ Monte checks the frozen material before every Run. If any of it changed, that is
 An Experiment owns its Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. An Experiment over a trainable Environment carries all three. One over an eval-only Environment carries `dev` alone when that Environment was frozen from a single benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim.
 
 - **`train`.** What the model learns on.
-- **`dev`.** What the driving agent reads to choose its next Move.
+- **`dev`.** What the Improver reads to choose its next Move.
 - **`test`.** Held back for the Baseline and the final claim.
 
-The driving agent picks each next Move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
+The Improver picks each next Move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses any further read you ask for. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related pages
 

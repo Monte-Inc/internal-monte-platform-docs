@@ -23,7 +23,7 @@ An Environment has three parts, and the agent harness sits beside them.
 
 Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or an Experiment. One Environment can serve several Experiments: the same tasks, frozen under different settings.
 
-You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
+You can measure any environment from the NeMo Gym catalog, or write your own. There are two ways to write one: an installable package, or `monte env create`, which scaffolds a Gym resources server into an authoring root. Freezing an authored server hashes its grader code into the fingerprint, so the code that graded a Run is part of the frozen material. In v1 you can measure against an authored Environment, but the trainer cannot reach one yet.
 
 ## Where a frozen input lives
 
