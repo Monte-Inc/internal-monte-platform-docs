@@ -34,13 +34,15 @@ The teacher can also give feedback on every token, whereas a grader returns one 
 
 Which method you use, and at what settings, is stated in a Recipe. It is a named file that every Run records, so two experiments differ by a few readable lines rather than by whatever you typed at the time. The Recipe states how a Run trains; what it trains on is stated separately, as the Run's Source. [Improvement](/concepts/improvement) covers how a Checkpoint reads back as the sequence of Moves that produced it.
 
+The algorithm a Recipe names is one of `sft`, `grpo` or `distillation`, which are the three methods above in the order this page introduces them. That word is also the first half of every hop label `monte status` prints, written as `algorithm:source`, so a hop reading `-grpo:demo->` is one reinforcement learning Run that trained on the `demo` curriculum.
+
 ## Related pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
     Where the reward comes from during training.
   </Card>
-  <Card title="Measurement" href="/concepts/measurement">
+  <Card title="Experiment" href="/concepts/experiment">
     What stays fixed while Recipes change.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">

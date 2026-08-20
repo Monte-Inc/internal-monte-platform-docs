@@ -1,7 +1,10 @@
 ---
 title: "Quickstart"
-description: "Your first loop on a laptop, no GPU needed"
 ---
+
+<Note>
+  Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
+</Note>
 
 Off a GPU box, every Run is a mock Run: the real CLI, a real Ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
 
@@ -45,7 +48,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```
     Run this now, before any training. `monte eval` scores the `dev` Split unless you say otherwise, so the Baseline eval above did not touch `test`.
 
-    The `test` Split gets two reads per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    The `test` Split is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
 
     If you train before taking this first read, Monte refuses a test eval on the new Checkpoint with `E_PREFLIGHT`, and the test delta cannot be recovered in that Cohort.
   </Step>
