@@ -34,7 +34,7 @@ flowchart TD
         BASE["Baseline"]:::score
         CP["Checkpoint"]:::model
         SCORE["Checkpoint score"]:::score
-        FINAL["Final score on the sealed exams"]:::score
+        FINAL["Final scores, one per sealed exam"]:::score
 
         BM -->|"monte eval"| BASE
         BM -->|"monte train"| CP
@@ -54,7 +54,7 @@ flowchart TD
     classDef none fill:#1E2024,stroke:#4A4D50,stroke-width:1.5px,color:#F0F1F2;
 ```
 
-A sealed exam is read twice: once on the base model before any training, and once at the end, on the Checkpoint the search nominates. That final eval is the number you report. `monte promote` copies a Checkpoint's weights out with its provenance, behind a confirmation you type in full. Every Run, score, and cost is recorded in that same shape. The driving agent reads that record, runs the loop, and decides what to try next.
+Each sealed exam is read twice: once on the base model before any training, and once at the end, on the Checkpoint the search nominates. Those final reads are the numbers you report — one score per sealed exam, and nothing merges them into one. `monte promote` copies a Checkpoint's weights out with its provenance, behind a confirmation you type in full. Every Run, score, and cost is recorded in that same shape. The driving agent reads that record, runs the loop, and decides what to try next.
 
 ## Start here
 

@@ -99,7 +99,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     `delta +0.3333` is the difference between those two scores. `paired, 2 fixed / 0 broken` says how Monte checked it: both evals scored the same frozen tasks, so it compared them task by task. Two tasks the Baseline got wrong came out right, none went the other way, and tasks that came out the same way both times cancel. `± 0.3772` is the interval around the delta. Pairing changes that interval, not the delta itself.
 
-    `demo-b (sealed)` prints no score. Its Baseline is recorded and one of its two touches is spent, and status keeps the number itself sealed until the claim is recorded.
+    `demo-b (sealed)` is the Cohort line that tracks the seal: the Baseline is recorded and one of the two touches is spent, and this line prints no score until the claim is recorded. The Run rows above it still print every row's score, the sealed Baseline's included.
 
     `lineage:` prints the Lineage, the path this Checkpoint took back to the base model. Each arrow is one training Run, labelled with the Move it made: the algorithm, then the source it trained on. Here one Run took the base model to step 50, training with `grpo` on the `demo` source.
 

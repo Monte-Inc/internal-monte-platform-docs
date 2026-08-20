@@ -17,7 +17,7 @@ To read one of them, hold the other still.
 - **Hold the harness, change the model.** The score reads model capability.
 - **Hold the model, change the harness.** The score reads harness quality. A new tool can raise accuracy and triple the token cost at the same time.
 
-An Experiment freezes the harness in each exam's fingerprint. Two Runs under one Experiment used the same harness, so the difference between their scores belongs to the model.
+An Experiment freezes the harness in each exam's fingerprint. Two Runs that score the same exam in the same Cohort used the same harness, so the difference between their scores belongs to the model. Two Runs on different exams share no such guarantee: each exam carries its own tasks and its own eval settings, and no comparison crosses between them.
 
 Changing the harness changes the fingerprint, which makes a different Experiment. Monte does not score across Experiments, so it does not compare harnesses today.
 

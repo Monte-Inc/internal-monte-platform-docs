@@ -92,7 +92,7 @@ monte status <experiment> [--json]
 
 Prints the Run rows, the per-Cohort exam lines with their deltas, the `lineage:` lines, the `cycles:` line with its strike verdicts, the `presents:` line with the standing Nomination, and the checkpoint list under `checkpoints:`.
 
-Each Cohort line carries one entry per exam that has a Baseline in it: the Baseline, the latest reading, and the paired delta between them. A delta never crosses exams, because two exams are two task sets. A sealed exam's line prints without its numbers until the claim is recorded, because `monte status` is what the Improver polls.
+Each Cohort line carries one entry per exam that has a Baseline in it: the Baseline, the latest reading, and the paired delta between them. A delta never crosses exams, because two exams are two task sets. A sealed exam's Cohort line prints without its numbers until the claim is recorded. That mask covers the summary line only: the Run rows and `monte show` still print every recorded row's score.
 
 **What a Cycle is.** A Cycle is one turn of the loop: the first look at a new Checkpoint, on whichever visible exam it lands. Later looks at the same Checkpoint on other visible exams attach their verdicts to that same Cycle, and a second look at an exam already judged there is a retry that judges nothing. A sealed read never opens or joins one: it is a touch, not a turn. Two branches off one Checkpoint each get their own Cycles, because the turn is the Checkpoint.
 
