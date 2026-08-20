@@ -4,7 +4,7 @@ title: "Experiments"
 
 An Experiment is a fixed standard for scoring a model. Two Runs under the same Experiment answered the same tasks under the same rules, so you can compare them directly.
 
-An Experiment is built on one [Environment](/concepts/environments), and it fixes which of that Environment's tasks run, the sampling rules, and what counts as correct.
+An Experiment is built on a set of exam [Environments](/concepts/environments), and it fixes which exams run, each exam's sampling rules, and what counts as correct.
 
 ## Why an Experiment exists
 
@@ -20,8 +20,8 @@ When the variables go unrecorded, old results stop being usable. You cannot tell
 
 An Experiment fixes three things when you create it.
 
-1. **The tasks.** Which tasks run, as an exact list. Not a count and not a name, but those specific tasks.
-2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets.
+1. **The exams.** Which exam Environments run, each pinned by its fingerprint: an exact task list, not a count and not a name.
+2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets. The settings belong to each exam, so two exams in one Experiment can differ.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
 An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
@@ -30,15 +30,14 @@ An Experiment names no model either: each Run binds its own, so many models can 
 
 Monte checks the frozen material before every Run. If any of it changed, that is a different Experiment, and Monte refuses to score the new Run against the old ones.
 
-## The Splits
+## Sealed and visible
 
-An Experiment owns its Splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. An Experiment over a trainable Environment carries all three. One over an eval-only Environment carries `dev` alone when that Environment was frozen from a single benchmark, and `dev` and `test` when it was frozen from two, which is the form that can carry a final claim.
+An Experiment assigns each of its exams one of two roles at init, and that assignment is the only decision it makes. Which pile a model trains on is not part of it: the training data is stated per Run.
 
-- **`train`.** What the model learns on.
-- **`dev`.** What the driving agent reads to choose its next Move.
-- **`test`.** Held back for the Baseline and the final claim.
+- **Visible.** The driving agent evaluates these freely, every cycle, and reasons over all of them. More visible exams is more information: nothing ranks them, and nothing merges their scores into one number.
+- **Sealed.** The driving agent can never evaluate these. Each sealed exam is touched twice per Cohort: the Baseline, and the final claim.
 
-The driving agent picks each next Move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
+The driving agent picks each next Move from what the visible exams show, so the loop fits itself to those tasks over time. A visible score therefore overstates the model, which is why it is not the number you report. A sealed exam stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Every exam, sealed and visible, needs that first read before training starts. Skip one and Monte refuses to train, because nothing can score the base model once a Checkpoint exists. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related pages
 
@@ -47,7 +46,7 @@ The driving agent picks each next Move from what `dev` shows, so the loop fits i
     The graded world an Experiment freezes.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">
-    How Splits, Baselines, and deltas judge improvement.
+    How Baselines and deltas judge improvement.
   </Card>
   <Card title="Glossary" href="/concepts/glossary">
     The record every Run writes to.
