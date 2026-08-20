@@ -18,7 +18,7 @@ Monte fixes what has to be held still for a comparison to mean anything. Results
 
 Monte covers the post-training loop end to end. You define an Environment — its tasks, tools, state, and a grader — then evaluate a model against it, train with supervised fine-tuning or reinforcement learning, and evaluate again. The gap between those two numbers is the result.
 
-A gap only means something if nothing moved between the two numbers. An Experiment freezes which tasks run, how the model is sampled, and what counts as correct, and every Run records the method, the source, and the model behind it. Monte never compares two results that were produced differently.
+A gap only means something if both evaluations ran under identical conditions. An Experiment freezes those conditions when you create it: the exact list of tasks, the decoding settings, how many attempts each task gets, and the grader that scores them. Every Run then records the Recipe it trained under, the Source it trained on, and the base model it started from. Change any of those and the results belong to different groups, and Monte never takes a delta across them.
 
 The same surface serves people and agents alike: one set of commands, one record, one set of guarantees. An agent driving the loop reads those conditions rather than inferring them, which is what makes the next decision an informed one.
 
