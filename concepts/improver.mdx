@@ -11,7 +11,7 @@ The Improver works one Measurement at a time, and a turn of its loop is four ste
 1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
 2. **Decide one Move**: which Checkpoint to start from, which Source to train on, and which Recipe to run.
 3. **Train one chunk** with those three coordinates stated in full, since Monte infers none of them.
-4. **Score the new Checkpoint on `dev`**, read the paired delta, and start again.
+4. **Score the new Checkpoint on `dev`**, read how far it moved against the Baseline, and start again.
 
 The Move is where the search happens, and it takes four shapes. Continuing a branch keeps the Recipe and starts from that branch's newest Checkpoint. Branching keeps the Recipe and starts from an earlier Checkpoint. You do that when a Recipe looked healthy up to a point and then stopped. A fresh branch starts from the base model under any Recipe. A stage boundary continues a Checkpoint under a different Recipe, so the weights carry over while the trainer's step counter restarts. That is how a supervised stage becomes the foundation for a reinforcement learning one.
 
@@ -64,11 +64,11 @@ Underneath all three, the Improver can read the terms of its Envelope and can ne
 
 ## How a search ends
 
-After the window closes, or as soon as the Improver concludes, a finalizer runs a fixed sequence on the box. Two of its steps act on the presented Checkpoint. That is the standing Nomination when the Improver left one, and otherwise the Checkpoint with the highest paired `dev` delta over the Baseline, with ties going to the higher n and then to the newer Run.
+After the window closes, or as soon as the Improver concludes, a finalizer runs a fixed sequence on the box. Two of its steps act on the presented Checkpoint. That is the standing Nomination when the Improver left one, and otherwise the Checkpoint whose `dev` score improved most over the Baseline, compared task by task. Ties go to the Checkpoint at the higher step, and then to the newer Run.
 
 1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
 2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
-3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint. When the Nomination is not the Checkpoint the rule would have picked, the finalizer scores the rule's pick on `test` beside it. That counterfactual read is diagnostic: it selects nothing, pushes no weights, and is the one sanctioned addition to the Split's two reads.
+3. **Make the blind claim**, on closing Envelopes only, as an eval on `test` of the presented Checkpoint.
 4. **Push the presented Checkpoint's weights** to Hugging Face, where weights live.
 5. **Sync the results tree** to the durable tier, which is what survives the box.
 6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
