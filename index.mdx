@@ -16,7 +16,7 @@ Monte fixes what has to be held still for a comparison to mean anything. Results
 
 ## How it works
 
-Monte covers the post-training loop end to end. It starts with an Environment: a set of tasks, the data behind them, and a grader that scores each attempt. Write your own, or freeze one from an existing catalog. From there every pass has the same shape. You score a model to fix a starting point, train against the Environment with supervised fine-tuning or reinforcement learning, then score what training produced. The gap between those two numbers is the result, and it is what tells you which method to change before the next pass.
+Monte covers the post-training loop end to end. You define an Environment — its tasks, their data, and a grader — then score a model against it, train with supervised fine-tuning or reinforcement learning, and score again. The gap between those two numbers is the result.
 
 What makes those numbers worth anything is that the conditions are fixed before the work starts. An Experiment freezes which tasks run, how the model is sampled, and what counts as correct. Every Run records the method, the data, and the model behind it. Two results only ever get compared when they were produced the same way.
 
