@@ -18,7 +18,7 @@ Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — u
 - **Run** — one eval or train execution, recorded as a row in a Measurement's Ledger. The model, the Recipe, and the Source bind here.
 - **Source** — what a training Run trains on, stated on every train (`--source`): a trainable Environment's curriculum (its own or another's) or a frozen Dataset (sft only). Recorded on the row; rendered in the hop label `algorithm:source`.
 - **Dataset** (capital D) — a frozen, named pile of demonstration rows for sft (`monte dataset add`), with any overlap against frozen exams recorded at freeze. Never part of a Measurement's definition. The lowercase ban above still stands.
-- **Move** — one decision by the driving agent: a Checkpoint × a Source × a Recipe.
+- **Move** — one decision by the Improver: a Checkpoint × a Source × a Recipe.
 - **Cohort** — the group of Runs sharing a base model and comparability config: the set within which a number means something. One Baseline each; deltas never cross one. Derived from row fields, stored nowhere.
 - **Lineage** — a Checkpoint's descent path: base model → Checkpoint → Checkpoint, each hop labelled by its move (`algorithm:source`); the Recipe stays on the row. Also derived. Checkpoints form a tree, not a line.
 - **Recipe** — the versioned file stating *how* a training Run trains (model shape, algorithm, batch geometry, optimizer). Binds per Run, inherits the pinned trainer's shipped config, pinned by content hash.
