@@ -20,7 +20,7 @@ Monte covers the post-training loop end to end. You define an Environment — it
 
 A gap only supports a conclusion if both evaluations ran under identical conditions. Monte freezes those conditions when you define an experiment: the exact list of tasks, the decoding settings, how many attempts each task gets, and the grader that scores them. That consistency is strictly enforced, not just recorded: Monte refuses a training run when any of it has changed.
 
-The same surface serves people and agents alike: one set of commands, one record, one set of guarantees. An agent driving the loop reads those conditions rather than inferring them, which is what makes the next decision an informed one.
+You pilot Monte from a CLI and a web console, both reading the same record. That is what lets people and agents collaborate across projects: an agent reads the conditions rather than inferring them, and anyone can see afterwards what it did and on what basis.
 
 An Environment carries what you need to score a Task: the Tasks, their answers, and the grader. One Environment can carry several Experiments. `monte experiment init` creates an Experiment and fixes which Tasks you score and how you score them. An Experiment over a trainable Environment is one whose Tasks you can also train on. An Experiment over an eval-only Environment is a fixed reference any model can be scored against.
 
