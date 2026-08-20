@@ -38,7 +38,7 @@ A Measurement owns its Splits, and the trainer and the evaluator both read the s
 - **`dev`.** What the Improver reads to choose its next Move.
 - **`test`.** Held back for the Baseline and the final claim.
 
-The Improver picks each next Move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
+The Improver picks each next Move from what `dev` shows, so the loop fits itself to those tasks over time. A `dev` score therefore overstates the model, which is why `dev` is not the number you report. `test` stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses any further read you ask for. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related pages
 

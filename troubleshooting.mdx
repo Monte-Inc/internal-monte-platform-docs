@@ -21,13 +21,13 @@ You trained before scoring the base model on `test`, so there is nothing for the
 E_PREFLIGHT: this cohort has no test baseline (test@0), so a checkpoint test eval would spend the final touch with nothing to pair against — the test delta would be forfeit forever
 ```
 
-Monte reads `test` exactly twice in a Cohort. The first read is one you run yourself, on the base model, with `monte eval <measurement> --split test` before any training. The second read is the final claim. `monte eval` scores `dev` unless you pass `--split test`, so the Baseline eval alone never touches `test`.
+You get two reads of `test` in a Cohort. The first read is one you run yourself, on the base model, with `monte eval <measurement> --split test` before any training. The second read is the final claim. `monte eval` scores `dev` unless you pass `--split test`, so the Baseline eval alone never touches `test`.
 
 There is no way to fix this inside the Cohort you are in. Once a Checkpoint exists, the first read can no longer be taken, and no honest test delta can be produced there. Start a fresh Cohort and take both Baselines before you train. In practice that means a new experiment with `monte experiment init`, because a Cohort is a group of Runs inside one Measurement's Ledger.
 
 ### The final claim refuses to select a Checkpoint
 
-You do not pick the Checkpoint the final claim scores. Monte does: it takes the Checkpoint whose `dev` score improved most over the Baseline, compared task by task.
+You do not pick the Checkpoint the final claim scores. Where a search left a Nomination, that is the Checkpoint. Otherwise Monte takes the one whose `dev` score improved most over the Baseline, compared task by task.
 
 That comparison needs the per-task results file for the Baseline and for every Checkpoint scored on `dev`, not just the leading one. If one of those files cannot be read, Monte refuses to select at all with `E_PREFLIGHT` rather than choosing among the rest, because the true winner could be exactly the Checkpoint it cannot read.
 

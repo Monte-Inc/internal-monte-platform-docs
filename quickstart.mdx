@@ -45,7 +45,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```
     Run this now, before any training. `monte eval` scores the `dev` Split unless you say otherwise, so the Baseline eval above did not touch `test`.
 
-    The `test` Split is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    The `test` Split gets two reads per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
 
     If you train before taking this first read, Monte refuses a test eval on the new Checkpoint with `E_PREFLIGHT`, and the test delta cannot be recovered in that Cohort.
   </Step>
