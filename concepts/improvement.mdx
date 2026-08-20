@@ -6,7 +6,7 @@ Training a model to where you want it is rarely a single run. You pick a method 
 
 With that many variables in play, the record of what you changed matters as much as the changes themselves. Each one should be visible: what you altered, what it was compared against, and what came back.
 
-The figure below is a high-level view of that work with the driving agent running it. Two things move at different speeds inside it: the model's weights, and the method used to change them.
+The figure below is a high-level view of that work with the [Improver](/concepts/improver) running it. Two things move at different speeds inside it: the model's weights, and the method used to change them.
 
 ```mermaid actions={false}
 flowchart LR
@@ -16,7 +16,7 @@ flowchart LR
     end
     subgraph OUTER["Moves the method"]
         direction TB
-        EVAL["Eval on dev"] --> LEDGER["Ledger"] --> AGENT["Driving agent decides<br/>the next Move"]
+        EVAL["Eval on dev"] --> LEDGER["Ledger"] --> AGENT["Improver decides<br/>the next Move"]
     end
     CKPT --> EVAL
     AGENT -->|"chosen Checkpoint, Source, and Recipe"| RUN
@@ -32,9 +32,9 @@ The Recipe does not change while this runs. Every choice about the method is set
 
 The Checkpoint is then scored on the `dev` Split, and the result is written to the [Ledger](/concepts/glossary). The Ledger holds the Baseline and every Run since, so it is where you find out what a given Recipe did and how that compared to what came before.
 
-The driving agent reads that record and decides the next Move, which is the part usually called the outer loop. A Move is three choices made together: which Checkpoint to start from, what to train on (the Source: a trainable Environment's curriculum, or a frozen Dataset of demonstrations), and which Recipe to run. Those choices are the arrow back into training, and running it produces one more Checkpoint. Nothing is replaced, so the record only ever grows.
+The Improver reads that record and decides the next Move, which is the part usually called the outer loop. A Move is three choices made together: which Checkpoint to start from, what to train on (the Source: a trainable Environment's curriculum, or a frozen Dataset of demonstrations), and which Recipe to run. Those choices are the arrow back into training, and running it produces one more Checkpoint. Nothing is replaced, so the record only ever grows.
 
-If the last Recipe produced a measurable improvement, continuing with it is the obvious Move. If it did not, the driving agent changes something and tries again.
+If the last Recipe produced a measurable improvement, continuing with it is the obvious Move. If it did not, the Improver changes something and tries again.
 
 That is a simplification. Deciding whether a Recipe actually helped takes more than one number: the interval around the score, gradient norms and the other training diagnostics, and whether the model has begun overfitting. A single improvement on its own says very little. This page describes the shape of the process rather than the analysis inside it.
 
@@ -66,11 +66,11 @@ All three are the same operation underneath: pick a Checkpoint, pick a Source, p
 
 ## Making the claim
 
-The search runs until the model reaches the result you were after, or until the budget you set aside runs out. Monte does not make that call. Nothing exits the search automatically, and no rule decides that you have run enough.
+A search runs inside an [Envelope](/concepts/improver), the terms it was approved under, and the Envelope's window close ends it mechanically: the Improver's process is killed at that moment. The Improver can also conclude earlier, when it judges that more Moves will not improve the result it presents, and the finalizer then runs at once. You can still stop the work yourself, and the window stays the hard ceiling in every case.
 
-The choice of which Checkpoint to claim is not yours, though. Monte selects the one whose `dev` score improved most over the Baseline, rather than the one with the highest `dev` score. It makes that comparison task by task against the Baseline, so it needs every candidate's per-task results to be readable, and if even one of them cannot be read it refuses to select at all rather than pick the best of the rest. That keeps the last decision consistent with every earlier one, all of which were also made by reading `dev`.
+The choice of which Checkpoint to claim is not yours, though. The Improver nominates the Checkpoint its Envelope presents, and that Nomination has to be one with an admissible `dev` eval. Where it left none, Monte falls back to a rule and selects the Checkpoint whose `dev` score improved most over the Baseline, rather than the one with the highest `dev` score. It makes that comparison task by task against the Baseline, so it needs every candidate's per-task results to be readable, and if even one of them cannot be read it refuses to select at all rather than pick the best of the rest. That keeps the last decision consistent with every earlier one, all of which were also made by reading `dev`.
 
-That Checkpoint is then scored on `test`, and the result is the claim. It is the second of the two reads of `test` that Monte allows, and the first is one you take yourself, as a deliberate eval of the base model, before any training begins. Without that first read the claim has nothing to compare against, so Monte refuses it. The rule is two reads per [Cohort](/concepts/glossary), the group of Runs that share a base model and the same frozen evaluation settings and can therefore be compared: a third read is refused, and so is a claim at any step Monte did not select. Dev selects, test confirms.
+A finalizer scores that Checkpoint on `test` after the Improver has stopped, and the result is the claim. Because the Improver never runs that eval and never reads its number, the claim is blind. It is the second of the two reads of `test` that Monte allows, and the first is one you take yourself, as a deliberate eval of the base model, before any training begins. Without that first read the claim has nothing to compare against, so Monte refuses it. The rule is two reads per [Cohort](/concepts/glossary), the group of Runs that share a base model and the same frozen evaluation settings and can therefore be compared: a third read is refused, and so is a claim at any step Monte did not select. Dev selects, test confirms.
 
 If the claim shows an improvement, the Checkpoint can be promoted. Promoting exports its servable folder as a checksum-verified copy, behind a confirmation you have to type out in full. If the claim shows no improvement there is nothing worth promoting, and the Ledger keeps the record exactly as it stands, but Monte does not decide this for you: `monte promote` exports any succeeded training Run's Checkpoint that counts as evidence, so the judgement is yours. The tree still shows every method that was tried and what each one scored, so the work has an answer either way.
 
