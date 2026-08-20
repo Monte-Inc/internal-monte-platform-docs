@@ -18,7 +18,7 @@ Monte fixes what has to be held still for a comparison to mean anything. Results
 
 Monte covers the post-training loop end to end. You define an Environment — its tasks, tools, state, and a grader — then evaluate a model against it, train with supervised fine-tuning or reinforcement learning, and evaluate again. The gap between those two numbers is the result.
 
-You can only credit that gap to the training if both evaluations ran under identical conditions. Monte freezes those conditions when you define an experiment: the exact list of tasks, the decoding settings, how many attempts each task gets, and the grader that scores them. That consistency is strictly enforced, not just recorded: Monte refuses a training run when any of it has changed.
+You can only credit that result to the training if both evaluations ran under identical conditions. Monte freezes those conditions when you define an experiment: the exact list of tasks, the decoding settings, how many attempts each task gets, and the grader that scores them. That consistency is strictly enforced, not just recorded: Monte refuses a training run when any of it has changed.
 
 Monte runs from both a CLI and a web console, reading the same record. People and agents can therefore collaborate across projects: an agent reads what has already been tried and what it scored rather than inferring it, and a human can monitor the work as it happens.
 
