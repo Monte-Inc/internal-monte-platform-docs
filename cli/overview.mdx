@@ -8,10 +8,10 @@ The `monte` CLI is the only write path into the platform. This page states the c
 ## Conventions
 
 - **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, and `box` groups have no default on purpose. Their subcommands are different intents.
-- **Confirm before launch.** `eval run` and `train run` print the run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the run persists, and its hash lands in the row as `config_hash`.
+- **Confirm before launch.** `eval run` and `train run` print the run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The approved plan is the exact object the run persists, and its hash lands in the row as `config_hash`.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <experiment-name>`, typed out. A mismatch is the same `E_CONFIRM`.
-- **How to name a Run.** One form everywhere: `<experiment>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every run, and `monte status` prints it. An alias names the succeeded run at that N. Two succeeded matches refuse by name, and the CLI never picks by ledger order.
-- **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the run that wrote the checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
+- **How to name a run.** One form everywhere: `<experiment>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every run, and `monte status` prints it. An alias names the succeeded run at that N. Two succeeded matches refuse by name, and the CLI never picks by ledger order.
+- **How to name a checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the run that wrote the checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
 - **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
@@ -54,4 +54,4 @@ The first row has a precondition the others do not. `env add`, `env list --avail
 | 16 | `E_REMOTE` | monte could not submit a remote run: a dirty or unpushed tree, a box that cannot serve the run, or a shipping step failing over SSH |
 | 17 | `E_ENVELOPE` | the action falls outside an active envelope's approved terms |
 
-Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
+Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, to tell them apart.

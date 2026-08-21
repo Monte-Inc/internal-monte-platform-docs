@@ -10,10 +10,10 @@ The other pages call the thing that works the loop a driving agent. The improver
 
 The improver works one experiment at a time, and a turn of its loop is four steps.
 
-1. **Read the Ledger.** `monte status` prints the per-cohort deltas against the baseline, the Cycles with their strike verdicts, and the checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
-2. **Decide one Move**: which checkpoint to start from, which source to train on, and which recipe to run.
+1. **Read the ledger.** `monte status` prints the per-cohort deltas against the baseline, the Cycles with their strike verdicts, and the checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
+2. **Decide one move**: which checkpoint to start from, which source to train on, and which recipe to run.
 3. **Train one chunk** with those three coordinates stated in full, since Monte infers none of them.
-4. **Score the new Checkpoint on the visible exams**, read the paired deltas, and start again.
+4. **Score the new checkpoint on the visible exams**, read the paired deltas, and start again.
 
 The move is where the search happens, and it takes four shapes. Continuing an arm keeps the recipe and starts from that arm's newest checkpoint. Branching keeps the recipe and starts from an earlier checkpoint. You do that when a recipe looked healthy up to a point and then stopped. A fresh arm starts from the base model under any recipe. A stage boundary continues a checkpoint under a different recipe, so the weights carry over while the trainer's step counter restarts. That is how a supervised stage becomes the foundation for a reinforcement learning one.
 
@@ -44,7 +44,7 @@ Three refusals are live for as long as an envelope is active, and they hold rega
 
 - **An eval of a sealed exam is refused**, in every spelling, `--smoke` included, and under every experiment name on the host — a fresh experiment that shows the same exam is no way around the seal. A smoke run skips the two-touch budget, so it is the one spelling that would otherwise work.
 - **`monte promote` is refused.** Promotion is a human act on audited evidence, and it waits for the search to close.
-- **No new Run starts past the window's close.** The window is the approved spend, so a run started after it is spend nobody approved.
+- **No new run starts past the window's close.** The window is the approved spend, so a run started after it is spend nobody approved.
 
 Each of those is keyed to one envelope's id. The promote and window refusals bind only the experiment the envelope names; the sealed refusal is deliberately wider, covering the exams that experiment seals under any name on this host. There is still no global mode: a seal is what this search cannot see, never a claim on the exam everywhere, so the same exam may be sealed here and visible in an unrelated experiment, and a second search on a second box is never refused by this one.
 
@@ -66,12 +66,12 @@ Underneath all three, the account the improver runs as on the box is fenced. It 
 
 After the window closes, a finalizer runs a fixed sequence on the box.
 
-1. **Stop the Improver.** Nothing the search could still influence happens while a move is in flight.
-2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
+1. **Stop the improver.** Nothing the search could still influence happens while a move is in flight.
+2. **Mark the envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
 3. **Make the blind claim**, on closing envelopes only, as an eval of the nominated checkpoint on each sealed exam. A search that nominated nothing presents nothing: the claim and the push are skipped, the sealed touches stay unspent, and the envelope still ends.
-4. **Push the claimed Checkpoint's weights** to Hugging Face, where weights live.
+4. **Push the claimed checkpoint's weights** to Hugging Face, where weights live.
 5. **Sync the results tree** to the durable tier, which is what survives the box.
-6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
+6. **Sync the improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
 7. **Release the box to idle**, rather than terminating it, since the box outlives the envelope.
 
 A step that refuses or fails is recorded and the sequence continues past it. A failed claim should not also cost the search its sync, and an unreleased box would stay out of normal idle reaping.
@@ -98,7 +98,7 @@ monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 
 ## What Is Not Here Yet
 
-One envelope runs at a time, on one box, and its search is serial: one run, then the next. Several boxes comparing recipes concurrently under a single envelope is a planned expansion rather than something you can ask for today. The design leaves room for it, but the platform has not shipped it.
+One envelope runs at a time, on one box, and its search is serial: one run, then the next. Several boxes comparing recipes concurrently under a single envelope is a planned expansion rather than an option available today. The design leaves room for it, but the platform has not shipped it.
 
 ## Related Pages
 

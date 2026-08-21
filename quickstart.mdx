@@ -8,7 +8,7 @@ title: "Quickstart"
 
 Off a GPU box, every run is a mock run: the real CLI, a real ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
 
-You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-monte-platform`. uv fetches its own Python, and you never clone the repo.
+This walkthrough needs [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-monte-platform`. uv fetches its own Python, and the repo is never cloned.
 
 <Steps>
   <Step title="Install the CLI">
@@ -16,23 +16,23 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     uv tool install git+ssh://git@github.com/Monte-Inc/internal-monte-platform \
       --with "git+ssh://git@github.com/Monte-Inc/internal-monte-platform#subdirectory=environments/demo"
     ```
-    This puts `monte` on your PATH, so every command below is bare `monte`.
+    This puts `monte` on the PATH, so every command below is bare `monte`.
 
     The `--with` line adds the `demo` environment. Monte ships no environments of its own: each one is a separate package, and installing it is what registers it. Keep the quotes around that URL.
 
-    If your shell cannot find `monte`, run `uv tool update-shell` and open a new shell.
+    If the shell cannot find `monte`, run `uv tool update-shell` and open a new shell.
   </Step>
   <Step title="List the Installed Environments">
     ```bash
     monte env list
     ```
-    `demo` appears as a curriculum, and `demo-a` through `demo-d` as exams, all mock. A curriculum holds training tasks, graded live by its own grader as the model attempts them: that is the material you train on. An exam holds a fixed pile of tasks to score against. Mock means they can be scored without a GPU box, which is why every run you make here is a mock run. The `demo` package exists to exercise the loop itself.
+    `demo` appears as a curriculum, and `demo-a` through `demo-d` as exams, all mock. A curriculum holds training tasks, graded live by its own grader as the model attempts them: that is the material training runs on. An exam holds a fixed pile of tasks to score against. Mock means they can be scored without a GPU box, which is why every run here is a mock run. The `demo` package exists to exercise the loop itself.
   </Step>
   <Step title="Create an Experiment">
     ```bash
     monte experiment init hello --sealed demo-b --visible demo-a
     ```
-    This freezes the exam set: each exam's fingerprint, its eval settings, and its role. `--visible` names the exams the loop scores freely, and `--sealed` names the ones it can never evaluate, held back for the final claim. Which exam is sealed is the experiment's decision, not the environments'. Every score in this experiment comes from those exams' graders. The name `hello` is yours to choose.
+    This freezes the exam set: each exam's fingerprint, its eval settings, and its role. `--visible` names the exams the loop scores freely, and `--sealed` names the ones it can never evaluate, held back for the final claim. Which exam is sealed is the experiment's decision, not the environments'. Every score in this experiment comes from those exams' graders. The name `hello` is arbitrary.
 
     Nothing about training is frozen here. You state the method and the data on each run, in the next steps.
   </Step>
@@ -40,15 +40,15 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte eval hello
     ```
-    The CLI prints the run plan and asks `launch?`. The mock run takes about 30 seconds. With exactly one visible exam, `--exam` defaults to it, so this scores `demo-a` and records its baseline, the score you compare every later run against.
+    The CLI prints the run plan and asks `launch?`. The mock run takes about 30 seconds. With exactly one visible exam, `--exam` defaults to it, so this scores `demo-a` and records its baseline, the score every later run is compared against.
   </Step>
   <Step title="Take the Sealed Baseline">
     ```bash
     monte eval hello --exam demo-b
     ```
-    run this now, before any training. A sealed exam is never a default, so the baseline eval above did not touch `demo-b`: you name it deliberately.
+    Run this now, before any training. A sealed exam is never a default, so the baseline eval above did not touch `demo-b`: it must be named deliberately.
 
-    A sealed exam is read exactly twice per cohort, and a cohort is the set of runs that share one base model and one comparability config. Every run in this walkthrough is in the same cohort. The first read is this one, on the base model. The second is the final claim after training. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    A sealed exam is read exactly twice per cohort, and a cohort is the set of runs that share one base model and one comparability config. Every run in this walkthrough is in the same cohort. The first read is this one, on the base model. The second is the final claim after training. Having both reads is what allows the improvement to be stated on tasks the loop never saw.
 
     Every exam needs its baseline before training, not just the sealed one. Skip this step and `monte train` refuses with `E_NO_BASELINE`, naming `demo-b` and this exact command.
   </Step>
@@ -74,7 +74,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte eval hello
     ```
-    With no target flag, an eval scores the cohort's newest checkpoint on the one visible exam. That is the chunk you just trained, so this row lands as `eval@50`.
+    With no target flag, an eval scores the cohort's newest checkpoint on the one visible exam. That is the chunk just trained, so this row lands as `eval@50`.
   </Step>
   <Step title="Read the Ledger">
     ```bash
@@ -105,7 +105,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     `cycles:` prints each Cycle with one verdict per visible exam, and a Cycle is one turn of the loop: the first eval that counts as evidence at a new checkpoint. `STRIKE` means that exam's paired delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
 
-    `(1 strike — demo-a: 1)` tallies the strikes so far per exam, not a countdown. A strike is a label you read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and you decide when to stop.
+    `(1 strike — demo-a: 1)` tallies the strikes so far per exam, not a countdown. A strike is a label to read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and when to stop is an operator decision.
 
     `presents:` says which checkpoint this search puts forward for the final claim. Nothing stands here because nothing was nominated: a checkpoint is presented by a nomination, and no rule picks a winner from the scores in its place.
   </Step>
