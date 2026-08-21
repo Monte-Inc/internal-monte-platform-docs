@@ -34,7 +34,7 @@ This walkthrough needs [uv](https://docs.astral.sh/uv) and read access to `Monte
     ```
     This freezes the exam set: each exam's fingerprint, its eval settings, and its role. `--visible` names the exams the loop scores freely, and `--sealed` names the ones it can never evaluate, held back for the final claim. Which exam is sealed is the experiment's decision, not the environments'. Every score in this experiment comes from those exams' graders. The name `hello` is arbitrary.
 
-    Nothing about training is frozen here. You state the method and the data on each run, in the next steps.
+    Nothing about training is frozen here. The method and the data are stated on each run, in the next steps.
   </Step>
   <Step title="Run the Baseline Eval">
     ```bash
@@ -56,7 +56,7 @@ This walkthrough needs [uv](https://docs.astral.sh/uv) and read access to `Monte
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --smoke
     ```
-    A chunk is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. You never state a step count.
+    A chunk is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. A step count is never stated.
 
     Three things travel with every training run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
 
@@ -80,7 +80,7 @@ This walkthrough needs [uv](https://docs.astral.sh/uv) and read access to `Monte
     ```bash
     monte status hello
     ```
-    You get the run rows, one block per cohort with a line per exam, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
+    The output holds the run rows, one block per cohort with a line per exam, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
 
     The cohort block reads like this:
 

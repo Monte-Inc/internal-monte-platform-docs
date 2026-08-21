@@ -115,7 +115,7 @@ Read the line as follows:
 - A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate checkpoint.
 - A path that starts `base` trained from the base model.
 - A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
-- `ADR 0002` in the legend points at an internal platform decision record that this site does not publish. You do not need it to read the line. A stage boundary is a recipe change that starts from the parent checkpoint's weights alone.
+- `ADR 0002` in the legend points at an internal platform decision record that this site does not publish. It is not needed to read the line. A stage boundary is a recipe change that starts from the parent checkpoint's weights alone.
 
 The legend prints only when the path crosses a stage boundary.
 
@@ -249,7 +249,7 @@ All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item
 
 `monte eval --remote` and `monte train --remote` move one run onto an ephemeral box and return. The flow is fixed:
 
-1. **The reproducibility gate.** Your working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
+1. **The reproducibility gate.** The working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
 2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real run needs a warm box. The experiment it reads and the rows it writes both live on the data root.
 3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
 4. **The credentials.** Written under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
