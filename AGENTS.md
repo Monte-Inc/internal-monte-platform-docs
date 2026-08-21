@@ -12,7 +12,7 @@
 
 Monte's vocabulary is strictly defined in `monte-nemo-platform/CONTEXT.md` — use it exactly:
 
-- **Experiment** — a frozen evaluation contract over a set of exam Environments: which exams are **sealed** and which **visible**, each pinned by fingerprint with its own eval settings. Capitalize. Never "benchmark" or "eval suite". The CLI verb that creates one is `monte experiment init --sealed <exams> [--visible <exams>]`, and `--sealed` is required.
+- **Experiment** — a frozen evaluation contract over a set of exam Environments: which exams are **sealed** and which **visible**, each pinned by fingerprint with its own eval settings. Never "benchmark" or "eval suite". The CLI verb that creates one is `monte experiment init --sealed <exams> [--visible <exams>]`, and `--sealed` is required.
 
   Until 2026-08-20 this primitive was called a **Measurement**, over exactly one Environment with `dev`/`test` Splits and one global settings block. That shape is gone (ADR 0010): the roles moved onto whole exams as sealed/visible, and the claim comes from a Nomination rather than a selection rule. If you find a page still saying Measurement, `--split`, or dev/test roles, it was missed and should be fixed. The platform's `CONTEXT.md` calls a visible exam's role a **yardstick**; this site does not use that word.
 - **Environment** — a pluggable graded task package: tasks, a grader, and a domain, nothing else. It holds exactly one pile — an **exam** (a published benchmark) or a **curriculum** (a training pile) — and makes no exam decision; sealed/visible is the Experiment's call (ADR 0009). The `trainable`/`eval-only` kind is gone. Never "dataset" (see Dataset below — a different thing).
@@ -53,9 +53,11 @@ is worse than no note at all.
 
 {/* Add any project-specific style rules below */}
 
-- Use active voice and second person ("you")
+- Use active voice. Avoid second person in explanatory prose — write "the score every later run is compared against", not "the score you compare against". Direct instructions in Quickstart may stay imperative ("Run this before training").
+- Avoid vague nouns: "things", "stuff". Name the actual object.
 - Keep sentences concise — one idea per sentence
-- Use sentence case for headings
+- Use title case for headings and nav section names ("Where a Command Runs"). Command headings keep the command spelling: `## monte env`.
+- Write the primitives in lowercase in prose — "an experiment", "the run", "a checkpoint". The platform's `CONTEXT.md` capitalizes them because it is a spec; this site reads better without it, and the vocabulary list above still governs which word to use. Proper nouns stay capitalized: Monte, the Vault.
 - Bold for UI elements: Click **Settings**
 - Code formatting for file names, commands, paths, and code references
 
