@@ -1,13 +1,12 @@
 ---
 title: "Commands"
-description: "Every monte command, its flags, and what it refuses"
 ---
 
 <Note>
   Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
 </Note>
 
-Every `monte` command, in the order you meet them. The conventions they all share — the confirm step, how to name a Run, `--json`, and the exit codes — are on [Overview](/cli/overview).
+The conventions every command shares — the confirm step, how to name a run, `--json`, and the exit codes — are on [Overview](/cli/overview).
 
 ## monte experiment
 
@@ -15,11 +14,11 @@ Every `monte` command, in the order you meet them. The conventions they all shar
 monte experiment init <experiment> --eval <environment>
 ```
 
-Creates the Experiment: freezes the Splits, the eval settings, and the Environment fingerprint into `measurement.json`. Refuses an existing name (`E_MEASUREMENT_EXISTS`).
+Creates the experiment: freezes the splits, the eval settings, and the environment fingerprint. Refuses an existing name (`E_MEASUREMENT_EXISTS`).
 
-`--eval` names the Environment whose exams define this experiment. Its dev and test Splits and its grader produce every score the Ledger holds. An eval-only Environment is a valid `--eval`, and the experiment can still train: the training data is a separate axis, stated per Run.
+`--eval` names the environment whose exams define this experiment. Its dev and test splits and its grader produce every score the Ledger holds. An eval-only environment is a valid `--eval`, and the experiment can still train: the training data is a separate axis, stated per run.
 
-No Recipe is frozen here. The training method belongs to the Move, not to the experiment, so `monte train` states it every time.
+No recipe is frozen here. The training method belongs to the move, not to the experiment, so `monte train` states it every time.
 
 ## monte eval
 
@@ -29,29 +28,29 @@ monte eval <experiment> [--model M] [--split dev|test]
                          [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
-Scores a model on a Split and appends the row. The default Split is dev. The default target is the Cohort's newest Checkpoint, and the base model when the Cohort holds none.
+Scores a model on a split and appends the row. The default split is dev. The default target is the cohort's newest checkpoint, and the base model when the cohort holds none.
 
-**The test Split gets two reads per Cohort, and you spend the first one yourself.** Run this on the base model, before any training:
+**The test split gets two reads per cohort, and the first is spent deliberately.** Run this on the base model, before any training:
 
 ```bash
 monte eval <experiment> --split test
 ```
 
-The default Split is dev, so the Baseline eval alone never touches test. The command above is what records `test@0`, the score the final claim is later measured against. The second read is the final claim itself, after training.
+The default split is dev, so the baseline eval alone never touches test. The command above is what records `test@0`, the score the final claim is later measured against. The second read is the final claim itself, after training.
 
-If you train first and then ask for a Checkpoint's test score, Monte refuses with `E_PREFLIGHT`:
+If you train first and then ask for a checkpoint's test score, Monte refuses with `E_PREFLIGHT`:
 
 ```
 E_PREFLIGHT: this cohort has no test baseline (test@0), so a checkpoint test eval would spend the final touch with nothing to pair against — the test delta would be forfeit forever
 ```
 
-That Cohort cannot recover. Once a Checkpoint exists, there is no way to go back and score the base model on test, and spending the one remaining read would produce a number with nothing to compare it to. Start a new Cohort and take both Baselines before you train.
+That cohort cannot recover. Once a checkpoint exists, the base model can no longer be scored on test, and the one remaining read would produce a number with nothing to pair against. Start a new cohort and take both baselines before training.
 
-`--step N` scores the Checkpoint at that absolute step. It refuses when two branches of the Cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the branch exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test Split, because the final claim's Checkpoint is chosen by Monte, not by you. A `--smoke` run is exempt from that last rule, because it decides nothing.
+`--step N` scores the checkpoint at that absolute step. It refuses when two branches of the cohort both hold the step, because the request does not say which. `--checkpoint <run>/<step>` names the branch exactly and never has that problem. The two flags refuse together: state one. `--checkpoint` also refuses on the test split, because the final claim's checkpoint is chosen by Monte, not by hand. A `--smoke` run is exempt from that last rule, because it decides nothing.
 
-Monte chooses that Checkpoint by dev delta. Among the admissible dev evals in the Cohort that scored a Checkpoint, it takes the one whose paired dev delta over the Baseline is highest. Ties go to the eval at the higher step, then to the newer Run. The selection refuses unless every one of those candidates is pairable, meaning every candidate's per-task results file can be read, not just the leader's. Taking the best of the readable ones would be a guess, because the real winner could be the candidate that could not be read. It refuses for the same reason when the dev Baseline's own per-task file cannot be read, since that is the anchor every candidate is measured against. The fix in both cases is to run the command where the run directories live, which is the box.
+Monte chooses that checkpoint by the highest paired dev delta over the baseline, with ties going to the higher step and then to the newer run. Selection refuses unless the dev baseline and every candidate have readable per-task results, because the best of the readable ones would be a guess. The fix is to run the command where the run directories live, which is the box. [Improvement](/concepts/improvement#making-the-claim) covers the rule.
 
-`--remote` submits the Run to an ephemeral GPU box and returns. `--push` uploads results to the results bucket, the cloud bucket that outlives any box, after each transition. It is what the box job itself runs with. See [Remote runs](#remote-runs).
+`--remote` submits the run to an ephemeral GPU box and returns. `--push` uploads the run's results after each transition, so they survive the box that produced them. It is what the box job itself runs with. See [Remote runs](#remote-runs).
 
 ## monte train
 
@@ -62,26 +61,26 @@ monte train <experiment> --recipe <name|path> --source <name>
                           [--remote] [--push] [--yes] [--dry-run] [--json]
 ```
 
-Trains one chunk: 50 steps by default, set by the Experiment's `steps_per_chunk` train setting. A Recipe cannot change it, because that step count is what `train@N` means. Refuses without a matching-Cohort Baseline (`E_NO_BASELINE`). A real chunk states three things, and the CLI infers none of them.
+Trains one chunk: 50 steps by default, set by the experiment's `steps_per_chunk` train setting. A recipe cannot change it, because that step count is what `train@N` means. Refuses without a matching-cohort baseline (`E_NO_BASELINE`). A real chunk states three coordinates, and the CLI infers none of them.
 
-**`--recipe` is the method, per Run.** It takes a packaged or repo Recipe name, or a path to a YAML file. `monte config` lists the resolvable names and the search path. A Recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the Run's plan.
+**`--recipe` is the method, per run.** It takes a packaged or repo recipe name, or a path to a YAML file. `monte config` lists the resolvable names and the search path. A recipe may name its own model, and `--model` still wins. Both the name and the file's content hash land in the run's plan.
 
-**`--source` is what this Run trains on.** It names either a trainable Environment's curriculum, or a frozen [Dataset](#monte-dataset). This experiment's own Environment is a source like any other, and you state it like any other. The namespace is every trainable Environment plus every frozen Dataset on the data root. One name claimed by both refuses.
+**`--source` is what this run trains on.** It names either a trainable environment's curriculum, or a frozen [Dataset](#monte-dataset). This experiment's own environment is a source like any other, and it is stated like any other. The namespace is every trainable environment plus every frozen dataset on the data root. One name claimed by both refuses.
 
-The algorithm and the source must agree. A `grpo` or `distillation` Recipe reads its reward from a trainable Environment's Gym resources server as it trains, so it takes an Environment. An `sft` Recipe consumes demonstrations with no grader running, so it takes a Dataset frozen with `--kind sft`. A crossed pairing refuses, and the refusal names the fix.
+The algorithm and the source must agree. A `grpo` or `distillation` recipe reads its reward from a trainable environment's Gym resources server as it trains, so it takes an environment. An `sft` recipe consumes demonstrations with no grader running, so it takes a dataset frozen with `--kind sft`. A crossed pairing refuses, and the refusal names the fix.
 
-**`--parent` or `--from-base` is the starting point.** `--parent <run>/<step>` continues that exact Checkpoint. `--from-base` opens a fresh branch from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
+**`--parent` or `--from-base` is the starting point.** `--parent <run>/<step>` continues that exact checkpoint. `--from-base` opens a fresh branch from the base model at step 0. A real chunk that states neither refuses. A smoke states neither, because a smoke row never enters the tree.
 
 Two rules govern a continuation:
 
-- A `--parent` whose Recipe differs from this Run's is a **stage boundary**. It is a weights-only warm start: the Run stages the parent's servable weights, the trainer's step counter restarts, and the KL anchor moves to the parent Checkpoint. The optimizer and dataloader state belong to the parent's method, so the new Run does not restore them.
-- A same-Recipe continuation **keeps its parent's `--source`**. It restores the parent's optimizer and dataloader state, and that state indexes the parent's rows file. A different source refuses. To change the source, start a fresh branch with `--from-base`, or cross a stage boundary.
+- A `--parent` whose recipe differs from this run's is a **stage boundary**: a weights-only warm start. The run takes the parent's weights and nothing else, and the step counter restarts.
+- A same-recipe continuation **keeps its parent's `--source`**, because it restores the parent's optimizer state and that state indexes the parent's rows. A different source refuses. To change the source, start a fresh branch with `--from-base`, or cross a stage boundary.
 
-`--smoke` runs a 3-step micro-chunk that is never evidence. It cannot be a Baseline, a parent, or a promote source.
+`--smoke` runs a 3-step micro-chunk that is never evidence. It cannot be a baseline, a parent, or a promote source.
 
-`--remote` and `--push` work as they do on `eval`, with one addition. A real chunk's Checkpoints go to Hugging Face at the end of a `--push` run. A real `--remote` train therefore needs a Hugging Face token.
+`--remote` and `--push` work as they do on `eval`, with one addition. A real chunk's checkpoints go to Hugging Face at the end of a `--push` run. A real `--remote` train therefore needs a Hugging Face token.
 
-`--remote` also refuses a path-spelled `--recipe`. The box resolves the Recipe in its own checkout, where that file does not exist. Commit the file to `recipes/` and name it bare.
+`--remote` also refuses a path-spelled `--recipe`. The box resolves the recipe in its own checkout, where that file does not exist. Commit the file to `recipes/` and name it bare.
 
 ## monte status
 
@@ -89,15 +88,15 @@ Two rules govern a continuation:
 monte status <experiment> [--json]
 ```
 
-Prints the Run rows, the per-Cohort delta lines, the `lineage:` lines, the `cycles:` line with its strike verdicts, and the checkpoint list under `checkpoints:`.
+Prints the run rows, the per-cohort delta lines, the `lineage:` lines, the `cycles:` line with its strike verdicts, and the checkpoint list under `checkpoints:`.
 
-**What a Cycle is.** A Cycle is one turn of the loop: the first admissible eval at a new highest step along one Lineage. A retry at the same step is not a new Cycle, and two branches off one Checkpoint each get their own, because a Cycle is keyed on the path and not on the Cohort.
+**What a cycle is.** A cycle is one turn of the loop: the first admissible eval at a new highest step along one lineage. A retry at the same step is not a new cycle, and two branches off one checkpoint each get their own, because a cycle is keyed on the path and not on the cohort.
 
-**What a strike is.** Each Cycle carries a verdict. `STRIKE` means the paired dev delta against the Baseline is not significantly positive. `ok` means it is. A regression large enough to be significant is also a strike, because it is not an improvement either. A Cycle whose per-task files cannot be read prints neither verdict: it exists, but it is unjudged. Strikes are labels you read, not a countdown. Nothing adds them up, no number of them ends anything, and you decide when to stop.
+**What a strike is.** Each cycle carries a verdict. `STRIKE` means the paired dev delta against the baseline is not significantly positive. `ok` means it is. A regression large enough to be significant is also a strike, because it is not an improvement either. A cycle whose per-task files cannot be read prints neither verdict: it exists, but it is unjudged. Strikes are labels, not a countdown. Nothing adds them up, no number of them ends anything, and when to stop remains a human decision.
 
-**What paired means.** A delta line is paired when Monte can read the per-task results files of both evals, and it is labelled unpaired when it cannot. Both evals scored the same frozen tasks, so Monte compares them task by task and counts the flips. A task the Baseline got wrong and the newer eval got right counts as `fixed`. The reverse counts as `broken`. Tasks that came out the same way both times cancel. The delta is `(fixed - broken) / n`, where `n` is the number of tasks scored, and that is the same number you get by subtracting the two scores. Pairing does not change the delta. What counting the flips buys is the interval printed beside it, which is usually, though not always, tighter than one computed without pairing.
+**What paired means.** A delta line is paired when Monte can read the per-task results of both evals, and unpaired when it cannot. Both evals scored the same frozen tasks, so a paired line compares them task by task, counting the tasks the newer eval fixed against the ones it broke. The delta itself is the same either way. What pairing buys is the interval printed beside it, which is usually, though not always, tighter.
 
-Each `lineage:` line prints one descent path, as a start point followed by one arrow per training Run:
+Each `lineage:` line prints one descent path, as a start point followed by one arrow per training run:
 
 ```
 lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
@@ -106,13 +105,12 @@ lineage: base -grpo:demo-> 50 =distillation:demo(+50)=> 100
 
 Read the line as follows:
 
-- A hop label is `algorithm:source`, the Move that hop made. It comes from the Run's own plan.
+- A hop label is `algorithm:source`, the move that hop made. It comes from the run's own plan.
 - A single-shaft arrow `-label->` is a continuation. The number after it is the absolute step the hop ended on.
-- A double-shaft arrow `=label(+N)=>` is a stage boundary. `+N` is how many steps that hop trained after the boundary.
-- A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate Checkpoint.
+- A double-shaft arrow `=label(+N)=>` is a stage boundary, a recipe change that starts from the parent checkpoint's weights alone. `+N` is how many steps that hop trained after the boundary.
+- A hop that starts somewhere other than the previous hop's end prints ` from <step>`. That marks a fork off an intermediate checkpoint.
 - A path that starts `base` trained from the base model.
 - A path that starts with a run id and `(unread)` is truncated, because the parent row is not readable here.
-- `ADR 0002` in the legend points at an internal platform decision record that this site does not publish. You do not need it to read the line. A stage boundary is a Recipe change that starts from the parent Checkpoint's weights alone.
 
 The legend prints only when the path crosses a stage boundary.
 
@@ -124,7 +122,7 @@ monte show <experiment>/<run> [--json]
 monte stop <experiment>/<run>
 ```
 
-`logs` prints the Run's event file as JSON lines. `show` prints one full row with all provenance fields. `stop` terminates a running Run, and the row reads as abandoned.
+`logs` prints the run's event file as JSON lines. `show` prints one full row with all provenance fields. `stop` terminates a running run, and the row reads as abandoned.
 
 ## monte promote
 
@@ -132,7 +130,23 @@ monte stop <experiment>/<run>
 monte promote <experiment>/<run> --dest <path|user@host:path> --confirm <experiment>
 ```
 
-Exports a succeeded training Run's servable Checkpoint to `--dest`, sha256-verified. It then prints the file count and the destination disk usage.
+Exports a succeeded training run's servable checkpoint to `--dest`, sha256-verified. It then prints the file count and the destination disk usage.
+
+## monte weights
+
+```bash
+monte weights push <experiment> <run>/<step> [--kind servable|resume|both] [--json]
+```
+
+Pushes one already-trained checkpoint's weights to Hugging Face. `train --push` decides at launch, before the eval that says whether the chunk was worth keeping, so this is how a checkpoint earns its push afterwards, and how a failed push is retried without training the chunk again. `--kind` takes the servable folder, the full resume set, or both, and defaults to both. It needs a Hugging Face token, and it prunes nothing: retention belongs to the chunk-end push, where a new resume set replaces the old one.
+
+## monte config
+
+```bash
+monte config [--json]
+```
+
+Prints the resolved configuration: the data root and what set it, the base model pin, the environments usable here, and the recipes that resolve with their search path.
 
 ## monte env
 
@@ -141,124 +155,99 @@ monte env add --benchmark <benchmark> [--as <name>] [--json]
 monte env add --server <server> --dev <benchmark> --test <benchmark>
               [--as <name>] [--json]
 monte env add --dev <benchmark> --test <benchmark> --as <name> [--json]
-monte env list [--available | --vault] [--json]
+monte env create <name> [--json]
+monte env list [--available] [--json]
 monte env install <name>
 monte env install --all
 ```
 
-`add` freezes what the Gym checkout ships into an Environment of your own. It runs Gym's prepare once, records a hash of the files, writes the manifest, and pushes the frozen files to [the Vault](/concepts/environments#where-a-frozen-input-lives). Prepare and, for `--server`, the training data it downloads with your Hugging Face token are the only steps in an Environment's life that read a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses. The Vault holds that claim as well, and checking it is a read, so any GCS key that resolves is enough to make the check. A name the Vault holds refuses from any box in any region, whether or not the key that asked could have written it. Only a machine with no resolvable key at all falls back to checking this data root alone.
+`add` freezes what the Gym checkout ships into an environment of its own. It runs Gym's prepare once, records a hash of the files, and writes the manifest. Prepare, and for `--server` the training data it downloads with a Hugging Face token, are the only steps in an environment's life that read a live source. Every later step moves bytes that are already pinned, and checks them against those hashes. Frozen means frozen, so re-adding a name refuses.
 
-That push resolves the read-write key: `MONTE_GCS_BOX_KEY_FILE`, then `MONTE_GCS_BOX_KEY_OP`, then the ordinary ladder. A laptop's ordinary key is read-only on the Vault, so a laptop needs one of those two set to push at all.
-
-Writing is the half a read-only key cannot do, and `add` probes for it before it runs prepare, because prepare downloads from live sources and finding out afterwards would mean paying for it with nothing to show. Failing that probe is not a refusal. The name is still claimed against the Vault, the freeze still happens, and it stays on this data root, with a note that says so and names the key. Freeze again as soon as you have the key, after moving the local copy out of the data root: the name is claimed there, and an add refuses a name it already holds. Nothing is bound to a new Environment yet, so a re-freeze costs nothing today. Once a Baseline exists it is a different Experiment.
-
-A push that fails after the freeze splits in two. Losing the name to another region is the one case Monte cannot leave alone: it removes the manifest it just wrote, because a local manifest under a name another region's bytes now own would be a lie. The refusal names both halves of the fix. Re-add under `--as <new name>`, and `monte env install <name>` brings the winner's copy here.
-
-Every other push failure keeps the freeze. A dropped connection or a Ctrl-C took nothing from anyone, and prepare can be expensive to run again, so the Environment stays exactly as a keyless freeze would leave it: here, and nowhere else. The command still refuses, with `E_STORAGE`, and the refusal says the freeze survived and names the directory holding it.
-
-The three forms differ in what the Environment can do:
+The three `add` forms differ in what the environment can do:
 
 | Form | Kind | What it holds |
 | --- | --- | --- |
-| `--benchmark` | eval-only | one exam, used as a dev Split |
+| `--benchmark` | eval-only | one exam, used as a dev split |
 | `--server` with `--dev` and `--test` | trainable | a curriculum, plus both exams |
 | `--dev` and `--test` alone | eval-only | both exams, no curriculum |
 
-A trainable Environment can be a `--source`. Both eval-only forms can be an experiment's `--eval`. Only the exams-only form holds a test pile a final claim may touch. Choose it when an eval-only Experiment must carry a final claim.
+A trainable environment can be a `--source`. Both eval-only forms can be an experiment's `--eval`. Only the exams-only form holds a test pile a final claim may touch. Choose it when an eval-only experiment must carry a final claim.
 
-`--server` requires both exams at add time, because a frozen Environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
+`--server` requires both exams at add time, because a frozen environment cannot gain a test exam later. `--as` names the result. It defaults to the source name verbatim, and it is required for the exams-only form. Freezing a `--server` needs a Hugging Face token. Any other mix of these flags is a usage error, and the command exits 2.
 
-`list` has three scopes. Together they read as one progression, and passing `--available` with `--vault` is a usage error that exits 2, because each names a different place to look.
+`create` scaffolds a new Gym resources server to author — the grader, its curriculum, and its exams' config — under the authoring root. Write the grader, commit it, then freeze the result with `env add --server`.
+
+`list` has two scopes, and they name the two stages of an environment's life.
 
 | Command | What it answers | What it reads |
 | --- | --- | --- |
-| `monte env list --available` | which benchmarks you could freeze | the Gym checkout |
-| `monte env list --vault` | what the Vault holds | the Vault, over the network |
+| `monte env list --available` | which benchmarks can be frozen | the Gym checkout |
 | `monte env list` | what is usable here, now | local disk |
 
-An Environment moves down that table through its life: it ships in Gym's catalog, `env add` freezes it and pushes it to the Vault, and `env install` brings it down to this machine. Bare `list` prints each Environment, its kind, and its Gym benchmarks. It stays local and instant, with no network call. That is why `--vault` is a flag. The same discovery path runs on every `monte` command, so the default must never reach the network.
+Bare `list` prints each environment, its kind, and its Gym benchmarks. It stays local and instant, with no network call, because the same discovery path runs on every `monte` command.
 
-`install` puts the frozen files where Gym reads them. It decides by the manifest. No `manifest.json` on the data root means fetch the whole directory from the Vault and prove every hash before writing it. A manifest present means verify what is here and fetch nothing. It then registers the benchmark configs. Install is idempotent.
+`install` puts the frozen files where Gym reads them, verifies them against the manifest, and registers the benchmark configs. It is idempotent, and `--all` installs every environment on the data root. Installing is what makes a frozen environment usable: a name `list` reports is not a name `monte eval` or `monte train` accepts until `install` has run.
 
-Three things bound the fetch. It needs a key for reading, so a machine without one installs only what its data root already holds. `--all` builds its list the way bare `monte env list` does, from local disk, so it never reaches an Environment this data root has never seen: name that one. A package you author brings its own `install()` hook, and that one does not read the Vault.
-
-Registering is bounded too, with or without a Vault: it writes into the NeMo Gym checkout, so `install` refuses on a machine whose `MONTE_LOCAL` has no stack. A mock-only Environment never gets that far, which is why it installs anywhere.
-
-Installing is what makes a Vault Environment usable at all. `--eval` and `--source` both resolve against the data root, so a name `list --vault` shows you is not a name `monte train` accepts until `install` has run. With no key for reading, `install` on a name this data root has never held refuses as `E_NOT_FOUND`, which reads like an Environment that does not exist. A mock-only Environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead of installing anything, and that is success rather than a failure.
+Registering writes into the NeMo Gym checkout, so `install` refuses on a machine without the Gym stack. A mock-only environment declares no Gym benchmarks, so it has nothing to register: `install` prints a note instead, and that is success rather than a failure.
 
 ## monte dataset
 
 ```bash
 monte dataset add <name> (--from-file <path> | --from-hf <repo>[@<rev>] [--file <path>])
                   [--kind sft] [--input-key K] [--output-key K] [--json]
-monte dataset list [--vault] [--json]
+monte dataset list [--json]
 monte dataset show <name> [--json]
 ```
 
-A Dataset is a frozen pile of rows, and it is what an `sft` Recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. It then pushes the frozen rows to the Vault, under the same key rule as `env add`. Frozen means frozen, so re-adding a name refuses. The Vault holds that claim too, checked by any GCS key that resolves, so the name refuses from any box in any region.
+A dataset is a frozen pile of rows, and it is what an `sft` recipe trains on. `add` fetches the rows, proves every line is a JSON object, records a hash of the file, and records where the rows came from. Frozen means frozen, so re-adding a name refuses.
 
-A trainable Environment's curriculum and a Dataset share the `--source` namespace, so the two kinds guard each other's names. `dataset add` refuses a name the Vault already holds an Environment under. `env add --server` refuses a name a Dataset holds. The Dataset side is the stricter one, because a Vault listing does not say whether an Environment is trainable, so it refuses on the name alone. An eval-only `env add` checks nothing, because its name never resolves as a source. Neither guard needs a key to do its local half, so a freeze that cannot reach the Vault still refuses a name this data root already holds. They differ in order: `env add --server` reads local disk first, and `dataset add` asks the Vault first.
+A trainable environment's curriculum and a dataset share the `--source` namespace, so the two kinds guard each other's names: `dataset add` refuses a name an environment holds, and `env add --server` refuses a name a dataset holds. An eval-only `env add` checks nothing, because its name never resolves as a source.
 
 Name the rows once, from one of two places. `--from-file` freezes a local JSONL file. `--from-hf` freezes a Hugging Face dataset repo, optionally pinned as `<repo>@<revision>`, and `--file` picks the repo-relative JSONL file to take. A gated or private repo needs a Hugging Face token.
 
-`--kind sft` screens the pile against what the SFT trainer requires. It is the only kind today, and it is what makes a Dataset runnable. An unscreened pile declares no columns, so `monte train` refuses it as a source.
+`--kind sft` screens the pile against what the SFT trainer requires. It is the only kind today, and it is what makes a dataset runnable. An unscreened pile declares no columns, so `monte train` refuses it as a source.
 
 For a flat pile, `--input-key` names the prompt column and `--output-key` names the completion column. They default to `input` and `output`.
 
-`list` prints the frozen Datasets from their manifests, and does not re-hash the rows. `--vault` prints what the Vault holds instead, over the network. `show` prints one manifest with its pin re-proven against the bytes on disk, and fetches those bytes from the Vault first when the data root does not hold them.
-
-A frozen Dataset lives in [the Vault](/concepts/environments#where-a-frozen-input-lives) under the same rules an Environment does. The copy on the data root is a materialization of it, and `show` is the only command that fetches one back. `monte train --source <name>` resolves against the data root alone, so a machine that has never held the rows needs `monte dataset show <name>` first. That fetch needs a key for reading. Without one `show` refuses as `E_NOT_FOUND`, which reads like a Dataset that does not exist.
-
-## monte sync, push
-
-```bash
-monte sync [experiment...] [--bucket B] [--key-file PATH] [--json]
-monte push <experiment> [--run R] [--bucket B] [--key-file PATH] [--json]
-```
-
-`sync` and `push` are the two directions of the results bucket, the cloud bucket that outlives any box. It holds results only. Frozen Environments and Datasets live in [the Vault](/concepts/environments#where-a-frozen-input-lives), and `monte env` and `monte dataset` move those.
-
-`sync` pulls the bucket into a local Mirror, and defaults to every Experiment in it. A Mirror is a read-only local copy of the results, so you can read Ledger state with no box up. Weights never enter it. The bucket copy wins on disagreement, `sync` never deletes a local-only file, and it skips weight objects, because weights live on Hugging Face.
-
-`push` uploads one Experiment's local results tree, new and changed files only. `--run` narrows it to a single Run plus the Experiment's own files. `push` deletes nothing remote, so retention stays a separate deliberate act. It also refuses a weight file.
-
-Both take `--key-file` first. After that they differ, because one reads and one writes. `sync` resolves `MONTE_GCS_KEY_FILE`, then the 1Password document `MONTE_GCS_KEY_OP` names. `push` resolves the read-write key first, `MONTE_GCS_BOX_KEY_FILE` then `MONTE_GCS_BOX_KEY_OP`, and falls back to `sync`'s ladder. A Vault freeze resolves the same write ladder. Keys are fetched in memory. For `sync` and `push`, no key is `E_STORAGE`. A freeze treats it differently, and [`monte env`](#monte-env) says how.
+`list` prints the frozen datasets from their manifests, and does not re-hash the rows. `show` prints one manifest with its pin re-proven against the bytes on disk. `monte train --source <name>` resolves against the data root, so a machine that has never held the rows cannot train on them.
 
 ## monte box
 
 ```bash
-monte box up [--type T] [--region R] [--cold] [--keep-alive] [--ssh-key K] [--json]
+monte box up [--type T] [--region R] [--cold] [--keep-alive] [--ssh-key K]
+             [--envelope PATH] [--hours H | --until STAMP] [--json]
 monte box status [--json]
 monte box down <instance-id|name> [--json]
 ```
 
-Ephemeral Lambda GPU boxes, managed from your laptop.
+Ephemeral Lambda GPU boxes, managed from a laptop.
 
 `up` looks for capacity in the NFS's home region first, then anywhere. It waits until the instance is active, then writes the identity file. It then arms a watchdog: a systemd timer that terminates the box through the Lambda API. The watchdog fires once the box has been idle for 45 minutes, or once it passes its 12-hour hard TTL.
 
-The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data root attached, and `--cold` launches one without it. A cold box has no data root. It has nowhere to read the Experiment from or write the Run's rows to, so it cannot serve a real Run. The Vault holds frozen Environments and Datasets, not an Experiment's own files.
+The default type is `gpu_1x_h100_pcie`. A warm box is launched with the NFS data root attached, and `--cold` launches one without it. A cold box has no data root. It has nowhere to read the experiment from or write the run's rows to, so it cannot serve a real run.
 
-`--keep-alive` is for a box you drive by hand. An interactive ssh session looks idle to the watchdog, so a box you are working on interactively dies mid-session. The flag writes `/etc/monte/keep-alive` after arming the watchdog, which disables the idle check. The 12-hour hard TTL still applies, and `monte box down` still works. Use it for interactive work, never for a submitted job.
+`--keep-alive` is for a box driven by hand. An interactive ssh session looks idle to the watchdog, so a box in interactive use dies mid-session. The flag disables the idle check at launch. The 12-hour hard TTL still applies, and `monte box down` still works. It is for interactive work, never for a submitted job.
+
+`--envelope` opens an approved [Envelope](/concepts/core-loop#the-envelope) on the box at launch, matching the launch against its terms. `--hours` or `--until` states that Envelope's window, which also sets the box TTL the window needs. Neither is accepted without `--envelope`, and neither can reach past the approved close.
 
 `status` lists every instance on the account. Monte's own boxes show age and an over-TTL flag. It lists anything else read-only, as foreign.
 
 `down` terminates one box through the API, never an OS shutdown, because Lambda keeps billing a halted instance. It refuses a foreign instance.
 
-All three resolve a Lambda API key from `MONTE_LAMBDA_KEY` or the 1Password item `MONTE_LAMBDA_KEY_OP` names. Without one, `E_BOX`.
+All three need a Lambda API key. Without one, `E_BOX`.
 
-## Remote runs
+## Remote Runs
 
-`monte eval --remote` and `monte train --remote` move one Run onto an ephemeral box and return. The flow is fixed:
+`monte eval --remote` and `monte train --remote` move one run onto an ephemeral box and return. The flow is fixed:
 
-1. **The reproducibility gate.** Your working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
-2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real Run needs a warm box. The Experiment it reads and the rows it writes both live on the data root.
-3. **The code.** Shipped as a git bundle at the recorded commit, then `uv sync` on the box.
-4. **The credentials.** Written under `/etc/monte/secrets`, streamed over stdin rather than passed as arguments.
-5. **The tree.** Seeded by the box's own `monte sync`, so there is one transfer path and never a second.
-6. **The job.** Launched detached in a tmux session. It pushes results at each transition, and the box terminates itself when the job ends.
+1. **The reproducibility gate.** The working tree must be clean, and origin must contain `HEAD`. The box checks out exactly that commit, so an uncommitted or unpushed change would make the recorded `git_sha` a lie. This is a refusal, never a warning, and it is why `--remote` needs a checkout rather than a tool install.
+2. **A box.** Monte reuses an active box when it fits. If none fits, Monte launches and arms one. A real run needs a warm box. The experiment it reads and the rows it writes both live on the data root.
+3. **The code.** Shipped as a git bundle at the recorded commit, then installed on the box.
+4. **The tree.** The box pulls the experiment's results down itself, so there is one transfer path and never a second.
+5. **The job.** Launched detached, so the connection can drop. It pushes results at each transition, and the box terminates itself when the job ends.
 
-Every refusal that the laptop can prove fires on the laptop. The Experiment must exist locally, the Recipe must resolve, and the Recipe and `--source` must pair.
+Every refusal that the laptop can prove fires on the laptop. The experiment must exist locally, the recipe must resolve, and the recipe and `--source` must pair.
 
 `--remote` refuses alongside `--push`, because the box job already runs with it. It also refuses alongside `--dry-run`, because submitting launches real compute.
 
-Watch a submitted Run with `monte sync <experiment>` and then `monte status <experiment>`, which is never more than one transition behind live. A transition is one of five milestone events in a Run's life: the Run starting, a Checkpoint saving, a score being recorded, weights uploading, and the Run finishing.
+A submitted run is watched with `monte status <experiment>`, which is never more than one transition behind live. A transition is one of five milestone events in a run's life: the run starting, a checkpoint saving, a score being recorded, weights uploading, and the run finishing.

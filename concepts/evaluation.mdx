@@ -2,38 +2,38 @@
 title: "Evaluation"
 ---
 
-An evaluation runs a model on a set of tasks, scores what comes back, and reports how the model performed. The result tells you what is working, what is not, and where the next effort should go.
+An evaluation runs a model on a set of tasks, scores what comes back, and reports how the model performed. The result shows what is working, what is not, and where the next effort should go.
 
-When you fine-tune a model on new data, or add a tool to its agent harness, you expect it to do the work better. The change on its own does not confirm that. An evaluation is how you find out objectively: it puts a number on the model's performance, so you can say whether the change measurably improved it and by how much.
+Fine-tuning a model on new data, or adding a tool to its agent harness, is done in the expectation that it will perform better. The change on its own does not confirm that. An evaluation settles that objectively: it puts a number on the model's performance, which is what shows whether the change measurably improved it and by how much.
 
-That only holds if the two numbers you compare were produced the same way. If the tasks, the sampling rules, or the grader changed between them, the difference could have come from any of those rather than from the model, and the comparison no longer says anything about the change you made. A standardized evaluation removes that doubt, which is why every evaluation in Monte runs against a fixed [Experiment](/concepts/experiment).
+That only holds if the two numbers being compared were produced the same way. If the tasks, the sampling rules, or the grader changed between them, the difference could have come from any of those rather than from the model, and the comparison no longer says anything about the change you made. A standardized evaluation removes that doubt, which is why every evaluation in Monte runs against a fixed [Experiment](/concepts/experiment).
 
-## Model capability or agent capability
+## Model Capability or Agent Capability
 
-A score covers the model and the agent harness together. The harness picks the tools, holds the prompt, and decides when a Task is done. Each of those moves the number.
+A score covers the model and the agent harness together. The harness picks the tools, holds the prompt, and decides when a task is done. Each of those moves the number.
 
 To read one of them, hold the other still.
 
-- **Hold the harness, change the model.** The score reads model capability.
-- **Hold the model, change the harness.** The score reads harness quality. A new tool can raise accuracy and triple the token cost at the same time.
+- **Hold the harness, change the model.** The score reads model capability. A stronger model can raise accuracy.
+- **Hold the model, change the harness.** The score reads harness quality. A new tool can raise accuracy.
 
-An Experiment freezes the harness in its fingerprint. Two Runs under one Experiment used the same harness, so the difference between their scores belongs to the model.
+An experiment freezes the harness in its fingerprint. Two runs under one experiment used the same harness, so the difference between their scores belongs to the model.
 
-Changing the harness changes the fingerprint, which makes a different Experiment. Monte does not score across Experiments, so it does not compare harnesses today.
+Changing the harness changes the fingerprint, which makes a different experiment. Monte does not score across experiments, so it does not compare harnesses today.
 
-## What makes an evaluation good
+## What Makes an Evaluation Good
 
-**Coverage.** The tasks have to look like the work you care about. A narrow set of tasks gives a high score that says little about real use.
+**Coverage:** The tasks have to resemble the work that matters. A narrow set of tasks gives a high score that says little about real use.
 
-**The grader.** The grader defines what good means for the [Environment](/concepts/environments). A noisy or biased grader scores the wrong thing, and training then optimizes for it. Programmatic checks such as an exact match, a test suite, or code that runs are steadier than a model that judges a model.
+**Grader:** The grader defines what good means for the [Environment](/concepts/environments). A noisy or biased grader scores the wrong property, and training then optimizes for it. Programmatic checks such as an exact match, a test suite, or code that runs are steadier than a model that judges a model.
 
-**Representative tasks.** Public benchmarks let you compare against published results. Your own tasks tell you whether the model works for your use. Most useful Environments have both.
+**Representative Tasks:** Public benchmarks allow comparison against published results. Bespoke tasks show whether the model works for a specific use. Most useful environments have both.
 
-**Repeats.** One attempt per Task is noisy. More attempts separate a real gain from variance. The Experiment fixes the number of attempts in its eval settings, so it cannot drift between Runs.
+**Repeats:** One attempt per task is noisy. More attempts separate a real gain from variance. The experiment fixes the number of attempts in its eval settings, so it cannot drift between runs.
 
-**Reproducibility.** The same Run has to be scored under the same conditions every time. The fingerprint hashes the Environment's frozen material: the tasks, the grader, and the harness configuration. Monte refuses a Run when any of it changed.
+**Reproducibility:** The same run has to be scored under the same conditions every time. The fingerprint hashes the environment's frozen material: the tasks, the grader, and the harness configuration. Monte refuses a run when any of it changed.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
@@ -46,8 +46,3 @@ Changing the harness changes the fingerprint, which makes a different Experiment
     What the score is used for once it exists.
   </Card>
 </CardGroup>
-
-## Further reading
-
-- [Evaluation](https://docs.nvidia.com/nemo/gym/about/concepts/evaluation/) (NeMo Gym)
-- [LLM evaluation: Why testing AI models matters](https://www.ibm.com/think/insights/llm-evaluation) (IBM)

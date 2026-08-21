@@ -6,9 +6,9 @@ title: "Quickstart"
   Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
 </Note>
 
-Off a GPU box, every Run is a mock Run: the real CLI, a real Ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
+This walkthrough runs the Monte loop end to end on a laptop: install the CLI, initialize an experiment, score a baseline, train a checkpoint, and score it against that baseline. That is the whole post-training pipeline, start to finish, and it runs the same way before it is pointed at real work.
 
-You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-monte-platform`. uv fetches its own Python, and you never clone the repo.
+Monte is in closed beta, so read access to `Monte-Inc/internal-monte-platform` is required. Everything below runs through [uv](https://docs.astral.sh/uv): it fetches its own Python, and the repo is never cloned.
 
 <Steps>
   <Step title="Install the CLI">
@@ -16,103 +16,113 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     uv tool install git+ssh://git@github.com/Monte-Inc/internal-monte-platform \
       --with "git+ssh://git@github.com/Monte-Inc/internal-monte-platform#subdirectory=environments/demo"
     ```
-    This puts `monte` on your PATH, so every command below is bare `monte`.
+    This places `monte` on the PATH, so every command below is invoked as bare `monte`.
 
-    The `--with` line adds the `demo` Environment. Monte ships no Environments of its own: each one is a separate package, and installing it is what registers it. Keep the quotes around that URL.
-
-    If your shell cannot find `monte`, run `uv tool update-shell` and open a new shell.
+    The `--with` line adds the `demo` environment. Environments ship alongside the CLI but install separately: each is its own package, and installing one is what registers it. Keep the quotes around that URL.
   </Step>
-  <Step title="List the installed Environments">
+  <Step title="List the Installed Environments">
     ```bash
     monte env list
     ```
-    `demo` appears as trainable and mock. Trainable means it owns a curriculum: its own training tasks, graded live by its own grader as the model attempts them. That is why `demo` can be both the exam you score against and the material you train on. Mock means it can be scored without a GPU box, which is why every Run you make here is a mock Run. `demo` exists to exercise the loop itself.
+    This walkthrough installs one environment, so the command lists `demo`. It is trainable and mock: its curriculum supplies the training tasks, and it runs without a GPU box.
   </Step>
-  <Step title="Create an experiment">
+  <Step title="Initialize an Experiment">
     ```bash
     monte experiment init hello --eval demo
     ```
-    This freezes the Splits, the eval settings, and the Environment fingerprint. `--eval` names the Environment whose exams decide what "better" means. Every score in this experiment comes from there. The name `hello` is yours to choose.
+    This freezes the splits, the eval settings, and the environment fingerprint. `--eval` names the environment whose exams decide what "better" means. Every score in this experiment comes from there. The name `hello` is arbitrary.
 
-    Nothing about training is frozen here. You state the method and the data on each Run, in the next steps.
+    Nothing about training is frozen here. The method and the data are stated on each run, in the steps that follow.
   </Step>
-  <Step title="Run the Baseline eval">
+  <Step title="Run the Baseline Eval">
     ```bash
     monte eval hello
     ```
-    The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. This scores the `dev` Split and lands as `eval@0`, the score you compare every later Run against.
+    The CLI prints the run plan and asks `launch?`. The mock run takes about 30 seconds. This baseline eval scores the dev split and lands as `eval@0`, the score every later run is compared against.
   </Step>
-  <Step title="Score the base model on test">
+  <Step title="Score the Base Model on Test">
     ```bash
     monte eval hello --split test
     ```
-    Run this now, before any training. `monte eval` scores the `dev` Split unless you say otherwise, so the Baseline eval above did not touch `test`.
+    Run this now, before any training. `monte eval` scores the dev split unless told otherwise, so the baseline eval above did not touch test.
 
-    The `test` Split is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model, one frozen Environment, and one set of eval settings. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training, which is the `test` score of the Checkpoint Monte selects. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    The test split is read exactly twice per cohort, and a cohort is the set of runs that share one base model, one frozen environment, and one set of eval settings. Every run in this walkthrough is in the same cohort. The first read is this one, on the base model. The second is the final claim after training, which is the test score of the checkpoint Monte selects. Having both reads is what allows the improvement to be stated on tasks the loop never saw.
 
-    If you train before taking this first read, Monte refuses a test eval on the new Checkpoint with `E_PREFLIGHT`, and the test delta cannot be recovered in that Cohort.
+    Do not skip this step. After training begins, Monte refuses the later test eval: no baseline exists to pair against, so the cohort can never state a test delta.
   </Step>
-  <Step title="Rehearse with a smoke chunk">
+  <Step title="Rehearse with a Smoke Run">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --smoke
     ```
-    A chunk is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. You never state a step count.
+    A run is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. A step count is never stated.
 
-    Three things travel with every training Run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the Run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
+    Three things accompany every training run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
 
-    A smoke Run is a capped sanity pass. It is never evidence: it cannot be a Baseline, a parent, or a promote source.
+    A smoke run is a capped sanity pass. It is never evidence: it cannot be a baseline, a parent, or a promote source.
   </Step>
-  <Step title="Train a real chunk">
+  <Step title="Train a Real Run">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --from-base
     ```
-    Now the starting point is stated. `--from-base` opens a fresh branch from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing Checkpoint. `monte status` prints the exact spelling.
+    Now the starting point is stated. `--from-base` opens a fresh branch from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing checkpoint. `monte status` prints the exact spelling.
 
-    This chunk is 50 steps and it does count as evidence.
+    This run is 50 steps and it does count as evidence.
   </Step>
-  <Step title="Score the new Checkpoint">
+  <Step title="Score the New Checkpoint">
     ```bash
     monte eval hello
     ```
-    With no target flag, an eval scores the Cohort's newest Checkpoint. That is the chunk you just trained, so this row lands as `eval@50`.
+    With no target flag, an eval scores the cohort's newest checkpoint. That is the run just trained, so this row lands as `eval@50`.
   </Step>
   <Step title="Read the Ledger">
     ```bash
     monte status hello
     ```
-    You get the Run rows, one summary line per Cohort, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
-
-    The Cohort block reads like this:
+    After the five runs above, the whole ledger prints:
 
     ```text
+    RUN                         KIND      STATUS     SCORE                    PID     STARTED
+    01M0GG8W3EN5W9FRSHE8ECFGE4  eval@0    succeeded  dev=0.6667±0.3772        -       2026-08-20T21:12:14+00:00
+    01M0GG9T3THPVPZ6DD2JQZ53NZ  eval@0    succeeded  test=0.3333±0.3772       -       2026-08-20T21:12:44+00:00
+    01M0GGAWK6A7DF1QH75QS8TCGP  train@3   succeeded  -                        -       2026-08-20T21:13:20+00:00  [not evidence]
+    01M0GGBTKSWZHRTCPJRR25J6S3  train@50  succeeded  -                        -       2026-08-20T21:13:50+00:00
+    01M0GGCRHY8FHNRWS310YE0ZCS  eval@50   succeeded  dev=1.0±0.0              -       2026-08-20T21:14:21+00:00
+
     cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1: dev 0.6667 -> 1.0 (delta +0.3333 ± 0.3772 paired, 2 fixed / 0 broken, eval@50)
       lineage: base -grpo:demo-> 50
       cycles: eval@50 +0.3333 ±0.3772 STRIKE  (1 strike)
+      presents 01M0GGBTKSWZHRTCPJRR25J6S3/step_50 of cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1 (dev 1.0000, +0.3333 vs the Baseline)
+        chosen by the claim rule (highest paired dev delta, which is not always the deepest step)
+
+    checkpoints:
+      step 50    written by 01M0GGBTKSWZHRTCPJRR25J6S3  (load-check ok, servable)
     ```
 
-    Take it line by line.
+    Three sections, top to bottom: the Run Ledger, the Cohort Block, and the Checkpoint Ladder.
 
-    `cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1` names the base model and the revision it is pinned to. `dev 0.6667 -> 1.0` is the `dev` score at the Baseline and at the newest eval, and `eval@50` says which eval produced that newest score.
+    **Run Ledger**
 
-    `delta +0.3333` is the difference between those two scores. `paired, 2 fixed / 0 broken` says how Monte checked it: both evals scored the same frozen tasks, so it compared them task by task. Two tasks the Baseline got wrong came out right, none went the other way, and tasks that came out the same way both times cancel. `± 0.3772` is the interval around the delta. Pairing changes that interval, not the delta itself.
+    One row per run, in the order they started. `KIND` is the kind and the step it sits at, which is why both baseline evals read `eval@0`: they scored the same untrained model, one on dev and one on test. The smoke is `train@3` and carries `[not evidence]`, the marker for a row nothing may be built on.
 
-    `lineage:` prints the Lineage, the path this Checkpoint took back to the base model. Each arrow is one training Run, labelled with the Move it made: the algorithm, then the source it trained on. Here one Run took the base model to step 50, training with `grpo` on the `demo` source.
+    **Cohort Block**
 
-    `cycles:` prints the verdict on each Cycle, and a Cycle is the first eval that counts as evidence at a new highest step along one Lineage. `STRIKE` means the paired `dev` delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
+    One block per cohort, and this walkthrough produced one.
 
-    `(1 strike)` is a count of the strikes so far, not a countdown. A strike is a label you read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and you decide when to stop.
+    `cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1` is the base model and its pinned revision. `dev 0.6667 -> 1.0` is the dev score at the baseline and at `eval@50`, the newest eval.
+
+    `delta +0.3333` is the gap between those two scores. `paired` means both evals scored the same frozen tasks, so Monte compared them task by task: `2 fixed / 0 broken` counts the flips, and tasks that landed the same way twice cancel. `± 0.3772` is the interval around the delta, and pairing changes that interval rather than the delta itself.
+
+    `lineage:` is the path from the base model to this checkpoint, one arrow per training run, labelled with the move it made. Here `grpo` on the `demo` source took the base model to step 50.
+
+    `cycles:` is the verdict at each new highest step along that path. `STRIKE` means the paired dev delta is not significantly positive: 0.3333 minus 0.3772 falls below zero, so the gain could be noise. `(1 strike)` is the cohort's running total.
+
+    `presents` names the checkpoint Monte would claim as the result, and the line beneath it says why that one won.
+
+    **Checkpoint Ladder**
+
+    Every step an evidence train run saved, each naming the run that wrote it and what was verified about it. `load-check ok` means the weights were loaded back and read cleanly; `servable` means a servable copy exists. The smoke wrote nothing here, which is what `[not evidence]` buys.
   </Step>
 </Steps>
-
-## Stay current
-
-The beta changes quickly. Pull the newest CLI with:
-
-```bash
-uv tool upgrade monte
-```
-
-To remove it, run `uv tool uninstall monte`.
 
 <Note>
 A real score needs a GPU box, and running on one needs a checkout of the platform repo rather than this tool install. Those instructions are being rewritten and are not on this site yet.

@@ -2,64 +2,54 @@
 title: "Environments"
 ---
 
-An Environment is the world an agent acts on. The agent takes an action, the Environment returns a new state and a reward, and the cycle repeats. The reward is the proxy for the desired behavior.
+An environment is the world an agent acts on. The agent takes an action, the environment returns a new state and a reward, and the cycle repeats. The reward is the proxy for the desired behavior.
 
 Monte builds on [NeMo Gym](https://docs.nvidia.com/nemo/gym/) and adds two structures that make agent-assisted training more reliable:
 
-- **Splits:** The improvement loop optimizes against the `dev` Split, so `dev` cannot be the reported result, and the `test` Split is held back to produce it.
-- **Fingerprint:** The tasks, the grader, and the harness configuration each change a score without looking like a change to the experiment. The fingerprint hashes the Environment's frozen material, for a trainable Environment its training data included, and refuses a Run when any of it changes.
+- **Splits:** The improvement loop optimizes against the dev split, so dev cannot be the reported result, and the test split is held back to produce it.
+- **Fingerprint:** The fingerprint hashes the environment's frozen material and refuses a run when any of it changes. Without it, the tasks, the grader, or the harness configuration could change silently and lead to different results.
 
 ## Parts of an Environment
 
-An Environment has three parts, and the agent harness sits beside them.
+An environment has three parts, and the agent harness sits beside them.
 
-**Tasks:** The tasks, plus the data needed to score each attempt. One Task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a Task into a model call belongs here too.
+**Tasks:** The tasks, plus the data needed to score each attempt. One task is one problem for the model: a coding issue to fix, a tool-calling scenario to work through, a support conversation to resolve. The prompt config that renders a task into a model call belongs here as well.
 
-**Grader:** It scores one attempt into a reward, usually between 0 and 1, by checking the output against the Task's own data: an expected answer, a test suite, or a rubric. It defines what "good" means for this Environment, and it serves two jobs at once, because its scores become both the eval metric and the training reward.
+**Grader:** It scores one attempt into a reward, usually between 0 and 1, by checking the output against the task's own data: an expected answer, a test suite, or a rubric. It defines what success looks like for this environment, and it can serve two roles: its score can be the eval metric, or it can serve as the training reward.
 
-**Tools and State:** The per-task world that the agent changes as it acts. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
+**Tools and State:** The per-task world the agent acts on. Tools are the actions available to it, and state is what those actions change. Each attempt starts from a clean state, so a reward belongs to that attempt alone. State ranges from none at all to a file system, a database, or a repository that the agent edits. Environments are single-turn today: one question in, one answer out, no tools and no state.
 
-**Agent Harness:** The harness works with an Environment, but the Environment does not own it. A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a Task is done. A simple harness only loops until the Task completes, while others add planning, memory, and skills. Each Run states which model it uses.
+**Agent Harness:** A model on its own does stateless inference, and the harness is what makes it an agent: it loops model calls, routes tool use, manages context, and decides when a task is done. A simple harness only loops until the task completes, while others add planning, memory, and skills. The harness works with an environment, but the environment does not own it.
 
-Every Environment must have a grader. Ungraded rows enter Monte only one way: frozen as a Dataset and stated as an sft Run's Source, never as part of an Environment or an Experiment. One Environment can serve several Experiments: the same tasks, frozen under different settings.
+Every environment must have a grader. Ungraded rows enter Monte only one way: frozen as a dataset and stated as an sft run's source, never as part of an environment or an experiment. One environment can serve several experiments: the same tasks, frozen under different settings.
 
-Monte measures any environment from the NeMo Gym catalog, and a custom Environment ships as an installable package.
+Monte measures any environment from the NeMo Gym catalog, and a custom environment ships as an installable package.
 
-## Where a frozen input lives
+## Why a Freeze Is Kept
 
-A frozen Environment lives in the Vault, a cloud bucket that outlives any box, and so does a frozen Dataset. That copy is the one Monte treats as true, and what follows holds for both kinds.
+Freezing the same tasks a second time reads live sources again, so the files come back different. Different files are a different fingerprint, which is a different experiment, and every baseline taken under the old one stops meaning anything.
 
-The copy on a data root is a materialization of it. `monte env add` freezes the files, hashes them, and pushes them to the Vault. `monte env install` fetches them back and proves every hash before it writes them, which is what makes a local copy disposable and recoverable. A Dataset works the same way, with `monte dataset show` as the command that fetches it. Losing a box, or the disk its data root sits on, therefore costs no frozen input that reached the Vault. Freezing is the only step that writes there, and after it the flow runs one way, from the Vault to a data root to the Gym checkout, so no copy can change the one above it.
+Those bytes cannot be made a second time, so they have to outlive the machine that made them. A frozen environment is therefore kept off the box that uses it, and any copy on a machine is proven against its hash rather than trusted. Checkpoints live on Hugging Face for the same reason.
 
-Whether an input reached the Vault depends on credentials, and the push and the fetch do not resolve the same ones. Writing goes through the read-write key, reading through the ordinary one, and the [`monte sync, push`](/cli/commands#monte-sync-push) section names both. A freeze that finds no key it can write with still freezes on the data root alone, and says so in a note. An Environment shipped as an installable package is never pushed at all, since the push belongs to `monte env add` rather than to its `install()`. Those copies exist locally and nowhere else, and reading `monte env list --vault` against a bare `monte env list` is what separates them from the rest.
+## How a Graded Rollout Runs
 
-The reason any of this matters is the fingerprint. Freezing the same tasks a second time runs Gym's prepare again, and prepare reads live sources, so the files come back different. Different files are a different fingerprint, which is a different Experiment, and every Baseline taken under the old one stops meaning anything. The bytes cannot be made a second time, so they have to outlive the machine that made them.
+A rollout runs across three servers: one for the model, one for the agent harness, and one for the environment's grader.
 
-That is the rule the Vault exists to enforce: a data root is a materialization, not a home. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. A Run launched with `--push`, which is what a remote Run runs with, sends its own results as it goes, and anything else waits for an explicit `monte push`.
-
-## How a graded rollout runs
-
-A rollout runs across three servers: one for the model, one for the agent harness, and one for the Environment's grader.
-
-1. The harness reads one Task from the Split. The Split is a list of Task IDs.
-2. The harness sends the Task to the model server, with the prompt already applied, and collects the reply.
+1. The harness reads one task from the split. The split is a list of task IDs.
+2. The harness sends the task to the model server, with the prompt already applied, and collects the reply.
 3. The harness sends the reply to the grader.
 4. The grader returns a reward and the answer that it extracted.
-5. Monte records one Trace for each Task, then writes the score to the Ledger.
+5. Monte records one trace for each task, then writes the score to the Ledger.
 
-A training Run uses the same grader, and although eval and training each run their own copy of it, preflight, the set of checks Monte runs before it launches anything, proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
+A training run uses the same grader, and although eval and training each run their own copy of it, preflight, the set of checks Monte runs before it launches anything, proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={2}>
   <Card title="Experiment" href="/concepts/experiment">
-    What the freeze covers: the Splits and the fingerprint.
+    What the freeze covers: the splits and the fingerprint.
   </Card>
-  <Card title="monte env" href="/cli/commands#monte-env">
-    Freeze an Environment, list what is registered, install its assets.
+  <Card title="CLI" href="/cli/commands#monte-env">
+    Freeze an environment, list what is registered, install its assets.
   </Card>
 </CardGroup>
-
-## Further reading
-
-- [Environments](https://docs.nvidia.com/nemo/gym/about/concepts/environments/) (NeMo Gym)

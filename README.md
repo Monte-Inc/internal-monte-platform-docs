@@ -19,7 +19,7 @@ Pushes to `main` deploy automatically via the Mintlify GitHub App (connected in 
 
 ## Conventions
 
-See `AGENTS.md` for terminology (Experiment, Environment, Run, Dataset, Source, Move, Cohort, Lineage, Recipe, Ledger, Vault) and content boundaries. Vocabulary is defined in `monte-nemo-platform/CONTEXT.md`.
+See `AGENTS.md` for terminology (Experiment, Environment, Run, Dataset, Source, Move, Cohort, Lineage, Recipe, Ledger) and content boundaries. Vocabulary is defined in `monte-nemo-platform/CONTEXT.md`.
 
 ## Troubleshooting
 
