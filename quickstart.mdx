@@ -6,7 +6,7 @@ title: "Quickstart"
   Monte is in closed beta. Interfaces and these docs change quickly, and commands can break between versions.
 </Note>
 
-Off a GPU box, every Run is a mock Run: the real CLI, a real Ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
+Off a GPU box, every run is a mock run: the real CLI, a real ledger row, and a fake score instead of real execution. That makes a laptop a safe place to learn the loop.
 
 You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-monte-platform`. uv fetches its own Python, and you never clone the repo.
 
@@ -18,7 +18,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```
     This puts `monte` on your PATH, so every command below is bare `monte`.
 
-    The `--with` line adds the `demo` Environment. Monte ships no Environments of its own: each one is a separate package, and installing it is what registers it. Keep the quotes around that URL.
+    The `--with` line adds the `demo` environment. Monte ships no environments of its own: each one is a separate package, and installing it is what registers it. Keep the quotes around that URL.
 
     If your shell cannot find `monte`, run `uv tool update-shell` and open a new shell.
   </Step>
@@ -26,31 +26,31 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte env list
     ```
-    `demo` appears as a curriculum, and `demo-a` through `demo-d` as exams, all mock. A curriculum holds training tasks, graded live by its own grader as the model attempts them: that is the material you train on. An exam holds a fixed pile of tasks to score against. Mock means they can be scored without a GPU box, which is why every Run you make here is a mock Run. The `demo` package exists to exercise the loop itself.
+    `demo` appears as a curriculum, and `demo-a` through `demo-d` as exams, all mock. A curriculum holds training tasks, graded live by its own grader as the model attempts them: that is the material you train on. An exam holds a fixed pile of tasks to score against. Mock means they can be scored without a GPU box, which is why every run you make here is a mock run. The `demo` package exists to exercise the loop itself.
   </Step>
   <Step title="Create an Experiment">
     ```bash
     monte experiment init hello --sealed demo-b --visible demo-a
     ```
-    This freezes the exam set: each exam's fingerprint, its eval settings, and its role. `--visible` names the exams the loop scores freely, and `--sealed` names the ones it can never evaluate, held back for the final claim. Which exam is sealed is the Experiment's decision, not the Environments'. Every score in this experiment comes from those exams' graders. The name `hello` is yours to choose.
+    This freezes the exam set: each exam's fingerprint, its eval settings, and its role. `--visible` names the exams the loop scores freely, and `--sealed` names the ones it can never evaluate, held back for the final claim. Which exam is sealed is the experiment's decision, not the environments'. Every score in this experiment comes from those exams' graders. The name `hello` is yours to choose.
 
-    Nothing about training is frozen here. You state the method and the data on each Run, in the next steps.
+    Nothing about training is frozen here. You state the method and the data on each run, in the next steps.
   </Step>
   <Step title="Run the Baseline Eval">
     ```bash
     monte eval hello
     ```
-    The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. With exactly one visible exam, `--exam` defaults to it, so this scores `demo-a` and records its Baseline, the score you compare every later Run against.
+    The CLI prints the run plan and asks `launch?`. The mock run takes about 30 seconds. With exactly one visible exam, `--exam` defaults to it, so this scores `demo-a` and records its baseline, the score you compare every later run against.
   </Step>
   <Step title="Take the Sealed Baseline">
     ```bash
     monte eval hello --exam demo-b
     ```
-    Run this now, before any training. A sealed exam is never a default, so the Baseline eval above did not touch `demo-b`: you name it deliberately.
+    run this now, before any training. A sealed exam is never a default, so the baseline eval above did not touch `demo-b`: you name it deliberately.
 
-    A sealed exam is read exactly twice per Cohort, and a Cohort is the set of Runs that share one base model and one comparability config. Every Run in this walkthrough is in the same Cohort. The first read is this one, on the base model. The second is the final claim after training. Having both reads is what lets you state the improvement on tasks the loop never saw.
+    A sealed exam is read exactly twice per cohort, and a cohort is the set of runs that share one base model and one comparability config. Every run in this walkthrough is in the same cohort. The first read is this one, on the base model. The second is the final claim after training. Having both reads is what lets you state the improvement on tasks the loop never saw.
 
-    Every exam needs its Baseline before training, not just the sealed one. Skip this step and `monte train` refuses with `E_NO_BASELINE`, naming `demo-b` and this exact command.
+    Every exam needs its baseline before training, not just the sealed one. Skip this step and `monte train` refuses with `E_NO_BASELINE`, naming `demo-b` and this exact command.
   </Step>
   <Step title="Rehearse with a Smoke Chunk">
     ```bash
@@ -58,15 +58,15 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```
     A chunk is the fixed unit `monte train` trains: 50 steps by default, and 3 steps for a smoke. You never state a step count.
 
-    Three things travel with every training Run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the Run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
+    Three things travel with every training run, and Monte infers none of them. `--recipe` is the method: `grpo_math_1B` ships with the CLI, and `monte config` lists the rest. `--source` is what the run trains on, here the `demo` curriculum. The third is the starting point, and `--smoke` is the one case that states none: a smoke rehearses the from-scratch path.
 
-    A smoke Run is a capped sanity pass. It is never evidence: it cannot be a Baseline, a parent, or a promote source.
+    A smoke run is a capped sanity pass. It is never evidence: it cannot be a baseline, a parent, or a promote source.
   </Step>
   <Step title="Train a Real Chunk">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --from-base
     ```
-    Now the starting point is stated. `--from-base` opens a fresh branch from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing Checkpoint. `monte status` prints the exact spelling.
+    Now the starting point is stated. `--from-base` opens a fresh branch from the base model at step 0. The other way to start is `--parent <run>/<step>`, which continues an existing checkpoint. `monte status` prints the exact spelling.
 
     This chunk is 50 steps and it does count as evidence.
   </Step>
@@ -74,15 +74,15 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
     ```bash
     monte eval hello
     ```
-    With no target flag, an eval scores the Cohort's newest Checkpoint on the one visible exam. That is the chunk you just trained, so this row lands as `eval@50`.
+    With no target flag, an eval scores the cohort's newest checkpoint on the one visible exam. That is the chunk you just trained, so this row lands as `eval@50`.
   </Step>
   <Step title="Read the Ledger">
     ```bash
     monte status hello
     ```
-    You get the Run rows, one block per Cohort with a line per exam, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
+    You get the run rows, one block per cohort with a line per exam, the `lineage:` lines, the `cycles:` line, and the `checkpoints:` list. Smoke rows carry a `[not evidence]` marker.
 
-    The Cohort block reads like this:
+    The cohort block reads like this:
 
     ```text
     cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1: 2 exam(s) anchored
@@ -95,19 +95,19 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     Take it line by line.
 
-    `cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1` names the base model and the revision it is pinned to, and `2 exam(s) anchored` says both exams have their Baselines. One line follows per exam. `demo-a: 0.6667 -> 1.0` is the visible exam's score at the Baseline and at the newest eval, and `eval@50` says which eval produced that newest score.
+    `cohort Qwen/Qwen2.5-1.5B-Instruct@mock-m1` names the base model and the revision it is pinned to, and `2 exam(s) anchored` says both exams have their baselines. One line follows per exam. `demo-a: 0.6667 -> 1.0` is the visible exam's score at the baseline and at the newest eval, and `eval@50` says which eval produced that newest score.
 
-    `delta +0.3333` is the difference between those two scores. `paired, 2 fixed / 0 broken` says how Monte checked it: both evals scored the same frozen tasks, so it compared them task by task. Two tasks the Baseline got wrong came out right, none went the other way, and tasks that came out the same way both times cancel. `± 0.3772` is the interval around the delta. Pairing changes that interval, not the delta itself.
+    `delta +0.3333` is the difference between those two scores. `paired, 2 fixed / 0 broken` says how Monte checked it: both evals scored the same frozen tasks, so it compared them task by task. Two tasks the baseline got wrong came out right, none went the other way, and tasks that came out the same way both times cancel. `± 0.3772` is the interval around the delta. Pairing changes that interval, not the delta itself.
 
-    `demo-b (sealed)` is the Cohort line that tracks the seal: the Baseline is recorded and one of the two touches is spent, and this line prints no score until the claim is recorded. The Run rows above it still print every row's score, the sealed Baseline's included.
+    `demo-b (sealed)` is the cohort line that tracks the seal: the baseline is recorded and one of the two touches is spent, and this line prints no score until the claim is recorded. The run rows above it still print every row's score, the sealed baseline's included.
 
-    `lineage:` prints the Lineage, the path this Checkpoint took back to the base model. Each arrow is one training Run, labelled with the Move it made: the algorithm, then the source it trained on. Here one Run took the base model to step 50, training with `grpo` on the `demo` source.
+    `lineage:` prints the lineage, the path this checkpoint took back to the base model. Each arrow is one training run, labelled with the move it made: the algorithm, then the source it trained on. Here one run took the base model to step 50, training with `grpo` on the `demo` source.
 
-    `cycles:` prints each Cycle with one verdict per visible exam, and a Cycle is one turn of the loop: the first eval that counts as evidence at a new Checkpoint. `STRIKE` means that exam's paired delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
+    `cycles:` prints each Cycle with one verdict per visible exam, and a Cycle is one turn of the loop: the first eval that counts as evidence at a new checkpoint. `STRIKE` means that exam's paired delta is not significantly positive: 0.3333 minus 0.3772 is below zero, so the interval reaches under zero and the gain could be noise.
 
     `(1 strike — demo-a: 1)` tallies the strikes so far per exam, not a countdown. A strike is a label you read. Nothing adds strikes up into a decision, nothing stops the loop at some number of them, and you decide when to stop.
 
-    `presents:` says which Checkpoint this search puts forward for the final claim. Nothing stands here because nothing was nominated: a Checkpoint is presented by a Nomination, and no rule picks a winner from the scores in its place.
+    `presents:` says which checkpoint this search puts forward for the final claim. Nothing stands here because nothing was nominated: a checkpoint is presented by a nomination, and no rule picks a winner from the scores in its place.
   </Step>
 </Steps>
 

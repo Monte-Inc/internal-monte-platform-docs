@@ -2,53 +2,53 @@
 title: "Experiments"
 ---
 
-An Experiment is a fixed standard for scoring a model. Two Runs under the same Experiment answered the same tasks under the same rules, so you can compare them directly.
+An experiment is a fixed standard for scoring a model. Two runs under the same experiment answered the same tasks under the same rules, so you can compare them directly.
 
-An Experiment is built on a set of exam [Environments](/concepts/environments), and it fixes which exams run, each exam's sampling rules, and what counts as correct.
+An experiment is built on a set of exam [Environments](/concepts/environments), and it fixes which exams run, each exam's sampling rules, and what counts as correct.
 
 ## Why an Experiment Exists
 
-Evaluation has many variables you can set. You can give each Task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
+Evaluation has many variables you can set. You can give each task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
 Each of those returns a different number for the same model, and none of them is wrong. They answer different questions about how well the model does the task.
 
-An Experiment holds those variables constant, so within one Experiment the model is the only thing that changed between two Runs. You can define as many Experiments as you want.
+An experiment holds those variables constant, so within one experiment the model is the only thing that changed between two runs. You can define as many experiments as you want.
 
 When the variables go unrecorded, old results stop being usable. You cannot tell why two numbers differ, so you cannot compare the experiments that produced them.
 
 ## What an Experiment Fixes
 
-An Experiment fixes three things when you create it.
+An experiment fixes three things when you create it.
 
-1. **The exams.** Which exam Environments run, each pinned by its fingerprint: an exact task list, not a count and not a name.
-2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets. The settings belong to each exam, so two exams in one Experiment can differ.
+1. **The exams.** Which exam environments run, each pinned by its fingerprint: an exact task list, not a count and not a name.
+2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each task gets. The settings belong to each exam, so two exams in one experiment can differ.
 3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
+An experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the source, what a run trains on, because those are what the driving agent changes between runs.
 
-An Experiment names no model either: each Run binds its own, so many models can compete under one Experiment.
+An experiment names no model either: each run binds its own, so many models can compete under one experiment.
 
-Monte checks the frozen material before every Run. If any of it changed, that is a different Experiment, and Monte refuses to score the new Run against the old ones.
+Monte checks the frozen material before every run. If any of it changed, that is a different experiment, and Monte refuses to score the new run against the old ones.
 
 ## Sealed and Visible
 
-An Experiment assigns each of its exams one of two roles at init, and that assignment is the only decision it makes. Which pile a model trains on is not part of it: the training data is stated per Run.
+An experiment assigns each of its exams one of two roles at init, and that assignment is the only decision it makes. Which pile a model trains on is not part of it: the training data is stated per run.
 
 - **Visible.** The driving agent evaluates these freely, every cycle, and reasons over all of them. More visible exams is more information: nothing ranks them, and nothing merges their scores into one number.
-- **Sealed.** The driving agent can never evaluate these. Each sealed exam is touched twice per Cohort: the Baseline, and the final claim.
+- **Sealed.** The driving agent can never evaluate these. Each sealed exam is touched twice per cohort: the baseline, and the final claim.
 
-The driving agent picks each next Move from what the visible exams show, so the loop fits itself to those tasks over time. A visible score therefore overstates the model, which is why it is not the number you report. A sealed exam stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Every exam, sealed and visible, needs that first read before training starts. Skip one and Monte refuses to train, because nothing can score the base model once a Checkpoint exists. [Improvement](/concepts/improvement) covers how those reads happen.
+The driving agent picks each next move from what the visible exams show, so the loop fits itself to those tasks over time. A visible score therefore overstates the model, which is why it is not the number you report. A sealed exam stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Every exam, sealed and visible, needs that first read before training starts. Skip one and Monte refuses to train, because nothing can score the base model once a checkpoint exists. [Improvement](/concepts/improvement) covers how those reads happen.
 
 ## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
-    The graded world an Experiment freezes.
+    The graded world an experiment freezes.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">
-    How Baselines and deltas judge improvement.
+    How baselines and deltas judge improvement.
   </Card>
   <Card title="Glossary" href="/concepts/glossary">
-    The record every Run writes to.
+    The record every run writes to.
   </Card>
 </CardGroup>

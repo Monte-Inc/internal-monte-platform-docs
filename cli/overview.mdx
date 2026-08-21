@@ -8,10 +8,10 @@ The `monte` CLI is the only write path into the platform. This page states the c
 ## Conventions
 
 - **Default subcommand.** `monte eval math` means `monte eval run math`. The same applies to `train`. Options may precede the name: `monte eval --smoke math` works. The `experiment`, `env`, `dataset`, and `box` groups have no default on purpose. Their subcommands are different intents.
-- **Confirm before launch.** `eval run` and `train run` print the Run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the Run persists, and its hash lands in the row as `config_hash`.
+- **Confirm before launch.** `eval run` and `train run` print the run plan, then ask `launch?`. Skip the prompt with `--yes`. Without a TTY the prompt refuses (`E_CONFIRM`) instead of hanging. `--dry-run` prints the plan and launches nothing. The plan you approve is the exact object the run persists, and its hash lands in the row as `config_hash`.
 - **Typed confirm for promote.** `promote` does not ask y/n. You must pass `--confirm <experiment-name>`, typed out. A mismatch is the same `E_CONFIRM`.
-- **How to name a Run.** One form everywhere: `<experiment>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every Run, and `monte status` prints it. An alias names the succeeded Run at that N. Two succeeded matches refuse by name, and the CLI never picks by Ledger order.
-- **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the Run that wrote the Checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that Run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
+- **How to name a Run.** One form everywhere: `<experiment>/<run>`. The run half is a ULID or an `eval@N` / `train@N` alias. A ULID is the sortable id Monte gives every run, and `monte status` prints it. An alias names the succeeded run at that N. Two succeeded matches refuse by name, and the CLI never picks by ledger order.
+- **How to name a Checkpoint.** A different form: `<run>/<step>`, where `<run>` is the ULID of the run that wrote the checkpoint and `<step>` is absolute. Absolute means counted from the base model, not from the start of that run. `monte status` prints both halves. Aliases do not resolve here, because two branches can hold one step.
 - **`--json`.** Supported on `eval run`, `train run`, `status`, `show`, `config`, `sync`, `push`, `env list`, `env add`, every `dataset` subcommand, and every `box` subcommand. Stdout carries pure JSON, and the human plan summary moves to stderr. One trap: `status --json` omits the checkpoint list that the human view prints under `checkpoints:`.
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
@@ -24,11 +24,11 @@ Three groups, and a command run from the wrong group is the most common source o
 | --- | --- | --- |
 | Anywhere | a tool install or a checkout | `experiment`, `status`, `logs`, `show`, `env`, `dataset`, `config`, `sync` |
 | Laptop, checkout only | a clean git checkout pushed to origin | `--remote` on `eval` and `train`, `box` |
-| Box-side | the GPU box holding the Checkpoint | real `eval` and `train`, `--push`, `promote` |
+| Box-side | the GPU box holding the checkpoint | real `eval` and `train`, `--push`, `promote` |
 
 `--remote` reads the git state of the checkout it runs from, so a `uv tool` install refuses it (`E_REMOTE`). `promote` copies weights off disk, so it runs where they live.
 
-The first row has a precondition the others do not. `env add`, `env list --available`, and `env install` all read or write the NeMo Gym checkout, so they need a machine whose `MONTE_LOCAL` holds the stack. Installing a mock-only Environment is the exception, because it has nothing to register.
+The first row has a precondition the others do not. `env add`, `env list --available`, and `env install` all read or write the NeMo Gym checkout, so they need a machine whose `MONTE_LOCAL` holds the stack. Installing a mock-only environment is the exception, because it has nothing to register.
 
 ## Exit Codes
 
@@ -37,21 +37,21 @@ The first row has a precondition the others do not. `env add`, `env list --avail
 | 0 | success | |
 | 1 | aborted | Ctrl+C at the confirm prompt, or a broken pipe |
 | 2 | usage | Click usage errors: a bad flag, a missing argument, a missing `--recipe` or `--source` |
-| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed Recipe and source, a continuation that changes its source, two flags naming one target, a frozen Environment file on the data root that does not match the manifest |
-| 3 | `E_NO_BASELINE` | train before every exam, sealed and visible, has its matching-Cohort Baseline |
-| 4 | `E_FROZEN_FIELD` | a launch would change a frozen Experiment field |
-| 5 | `E_NOT_COMPARABLE` | comparability config does not match the Cohort |
+| 3 | `E_REFUSAL` | a refusal with no more specific code: an unstated starting point, a crossed recipe and source, a continuation that changes its source, two flags naming one target, a frozen environment file on the data root that does not match the manifest |
+| 3 | `E_NO_BASELINE` | train before every exam, sealed and visible, has its matching-cohort baseline |
+| 4 | `E_FROZEN_FIELD` | a launch would change a frozen experiment field |
+| 5 | `E_NOT_COMPARABLE` | comparability config does not match the cohort |
 | 6 | `E_PREFLIGHT` | preflight failed: the lock, fingerprint drift on any of the experiment's exams, the free-space minimum, or a foreign GPU process |
 | 7 | `E_CONFIRM` | declined prompt, non-TTY without `--yes`, or a promote `--confirm` mismatch |
 | 8 | `E_EXPERIMENT_EXISTS` | `experiment init` on a name that exists |
-| 9 | `E_NOT_FOUND` | no such Experiment, Run, Environment, Dataset, or Checkpoint. Also a Vault fetch with no key to read with, which cannot tell the two apart |
-| 10 | `E_NOT_RUNNING` | stop on a Run that is not running. Exception: an abandoned Run with an orphaned container is still stoppable |
-| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen Dataset's rows fail their pin, or something the Vault holds is wrong: bytes that fail their hash, or a manifest that is not one, in shape or in what it pins. A frozen Environment already on the data root refuses under code 3 instead |
+| 9 | `E_NOT_FOUND` | no such experiment, run, environment, dataset, or checkpoint. Also a Vault fetch with no key to read with, which cannot tell the two apart |
+| 10 | `E_NOT_RUNNING` | stop on a run that is not running. Exception: an abandoned run with an orphaned container is still stoppable |
+| 11 | `E_CORRUPT_STATE` | Ledger or pairing state is inconsistent, a frozen dataset's rows fail their pin, or something the Vault holds is wrong: bytes that fail their hash, or a manifest that is not one, in shape or in what it pins. A frozen environment already on the data root refuses under code 3 instead |
 | 12 | `E_SERVING` | the serving stack produced no score: no snapshot, vLLM down, Gym failed, or no rollouts |
-| 13 | `E_VERIFICATION` | a finished Run failed its count or content check, or a promote checksum failed |
+| 13 | `E_VERIFICATION` | a finished run failed its count or content check, or a promote checksum failed |
 | 14 | `E_STORAGE` | a cloud bucket is unreachable in either direction: credentials, package, or path |
 | 15 | `E_BOX` | monte could not get or operate a box: credentials, capacity, the Lambda API refusing, or a foreign instance |
-| 16 | `E_REMOTE` | monte could not submit a remote Run: a dirty or unpushed tree, a box that cannot serve the Run, or a shipping step failing over SSH |
-| 17 | `E_ENVELOPE` | the action falls outside an active Envelope's approved terms |
+| 16 | `E_REMOTE` | monte could not submit a remote run: a dirty or unpushed tree, a box that cannot serve the run, or a shipping step failing over SSH |
+| 17 | `E_ENVELOPE` | the action falls outside an active envelope's approved terms |
 
 Codes 3 through 17 all print `CODE: cause (fix)` on stderr. Two names share code 3: `E_REFUSAL` is the base code, and `E_NO_BASELINE` carries the same exit value. Read the name on stderr, not the number, when you need to tell them apart.
