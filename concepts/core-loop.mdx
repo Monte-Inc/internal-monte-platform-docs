@@ -6,7 +6,7 @@ This is the first agentic loop Monte runs, and it is deliberately the simplest o
 
 The other pages call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads an Experiment's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
-## One turn of the loop
+## One Turn of the Loop
 
 The Improver works one Experiment at a time, and a turn of its loop is four steps.
 
@@ -38,7 +38,7 @@ The claim field is one bit, decided at approval. It is the difference between a 
 
 The box is not part of the Envelope's lifetime. One GPU box is acquired for the search program and held. An Envelope is an approved window of time on that box, not a box that lives and dies with the search. That separation exists because GPU capacity is genuinely scarce. Making every approval acquire its own box turns each one into a gamble, and pays the setup cost again each time.
 
-## What the platform refuses
+## What the Platform Refuses
 
 Three refusals are live for as long as an Envelope is active, and they hold regardless of which command asked or which harness ran it.
 
@@ -50,7 +50,7 @@ Each of those is keyed to one Envelope's id. The promote and window refusals bin
 
 Active means the record says active, and it does not mean the window is still open. An Envelope whose time has run out stays active until the finalizer marks it closed. A finalizer that never ran therefore leaves the sealed exams refused rather than quietly available. Closing the record by hand is the way out of that, and it is a deliberate act with a typed confirmation.
 
-## Three layers, not one
+## Three Layers, Not One
 
 The refusals above are the middle layer of three, and there are three because the outer two are known to be incomplete.
 
@@ -62,7 +62,7 @@ The **launcher** is the clock. It kills the Improver's process at the moment the
 
 Underneath all three, the account the Improver runs as on the box is fenced. It has a full login shell and the whole `monte` CLI, and it has neither sudo nor any credential. That combination is deliberate: an account with sudo could read the key that spends money. It could also stop the watchdog that ends the search, or rewrite the terms of its own Envelope. This one can read its Envelope and can never write it.
 
-## How a search ends
+## How a Search Ends
 
 After the window closes, a finalizer runs a fixed sequence on the box.
 
@@ -78,7 +78,7 @@ A step that refuses or fails is recorded and the sequence continues past it. A f
 
 The transcript is synced because it and the Ledger answer different questions. The Ledger records what was tried and what each attempt scored. The transcript records why the Improver moved as it did, which is what a later search reads before deciding where to pick up.
 
-## Reading and ending an Envelope
+## Reading and Ending an Envelope
 
 ```bash
 monte envelope list [--json]
@@ -96,11 +96,11 @@ monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 
 `close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer ran on another host, or never ran at all, and an Envelope is holding the sealed exams hostage.
 
-## What is not here yet
+## What Is Not Here Yet
 
 One Envelope runs at a time, on one box, and its search is serial: one Run, then the next. Several boxes comparing Recipes concurrently under a single Envelope is a planned expansion rather than something you can ask for today. The design leaves room for it, but the platform has not shipped it.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Improvement" href="/concepts/improvement">

@@ -25,7 +25,7 @@ Every Environment must have a grader, and every Environment names its domain: Gy
 
 You can measure any environment from the NeMo Gym catalog, or write your own as an installable package.
 
-## Where a frozen input lives
+## Where a Frozen Input Lives
 
 A frozen Environment lives in the Vault, a cloud bucket that outlives any box, and so does a frozen Dataset. That copy is the one Monte treats as true, and what follows holds for both kinds.
 
@@ -37,7 +37,7 @@ The reason any of this matters is the fingerprint. Freezing the same tasks a sec
 
 That is the rule the Vault exists to enforce: a data root is where things are materialized, not where they live. Frozen inputs belong to the Vault, Checkpoints to Hugging Face, and a Run's Traces, results, and events to the results bucket. A Run launched with `--push`, which is what a remote Run runs with, sends its own results as it goes, and anything else waits for a `monte push` you type yourself.
 
-## How a graded rollout runs
+## How a Graded Rollout Runs
 
 A rollout runs across three servers: one for the model, one for the agent harness, and one for the Environment's grader.
 
@@ -49,7 +49,7 @@ A rollout runs across three servers: one for the model, one for the agent harnes
 
 A training Run uses the same grader, and although eval and training each run their own copy of it, preflight, the set of checks Monte runs before it launches anything, proves that the copies match. The reward that the model learns from and the score that the eval reports therefore come out of one implementation.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={2}>
   <Card title="Experiment" href="/concepts/experiment">
@@ -60,6 +60,6 @@ A training Run uses the same grader, and although eval and training each run the
   </Card>
 </CardGroup>
 
-## Further reading
+## Further Reading
 
 - [Environments](https://docs.nvidia.com/nemo/gym/about/concepts/environments/) (NeMo Gym)

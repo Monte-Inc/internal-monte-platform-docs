@@ -22,13 +22,13 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     If your shell cannot find `monte`, run `uv tool update-shell` and open a new shell.
   </Step>
-  <Step title="List the installed Environments">
+  <Step title="List the Installed Environments">
     ```bash
     monte env list
     ```
     `demo` appears as a curriculum, and `demo-a` through `demo-d` as exams, all mock. A curriculum holds training tasks, graded live by its own grader as the model attempts them: that is the material you train on. An exam holds a fixed pile of tasks to score against. Mock means they can be scored without a GPU box, which is why every Run you make here is a mock Run. The `demo` package exists to exercise the loop itself.
   </Step>
-  <Step title="Create an experiment">
+  <Step title="Create an Experiment">
     ```bash
     monte experiment init hello --sealed demo-b --visible demo-a
     ```
@@ -36,13 +36,13 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     Nothing about training is frozen here. You state the method and the data on each Run, in the next steps.
   </Step>
-  <Step title="Run the Baseline eval">
+  <Step title="Run the Baseline Eval">
     ```bash
     monte eval hello
     ```
     The CLI prints the Run plan and asks `launch?`. The mock Run takes about 30 seconds. With exactly one visible exam, `--exam` defaults to it, so this scores `demo-a` and records its Baseline, the score you compare every later Run against.
   </Step>
-  <Step title="Take the sealed Baseline">
+  <Step title="Take the Sealed Baseline">
     ```bash
     monte eval hello --exam demo-b
     ```
@@ -52,7 +52,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     Every exam needs its Baseline before training, not just the sealed one. Skip this step and `monte train` refuses with `E_NO_BASELINE`, naming `demo-b` and this exact command.
   </Step>
-  <Step title="Rehearse with a smoke chunk">
+  <Step title="Rehearse with a Smoke Chunk">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --smoke
     ```
@@ -62,7 +62,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     A smoke Run is a capped sanity pass. It is never evidence: it cannot be a Baseline, a parent, or a promote source.
   </Step>
-  <Step title="Train a real chunk">
+  <Step title="Train a Real Chunk">
     ```bash
     monte train hello --recipe grpo_math_1B --source demo --from-base
     ```
@@ -70,7 +70,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
 
     This chunk is 50 steps and it does count as evidence.
   </Step>
-  <Step title="Score the new Checkpoint">
+  <Step title="Score the New Checkpoint">
     ```bash
     monte eval hello
     ```
@@ -111,7 +111,7 @@ You need [uv](https://docs.astral.sh/uv) and read access to `Monte-Inc/internal-
   </Step>
 </Steps>
 
-## Stay current
+## Stay Current
 
 The beta changes quickly. Pull the newest CLI with:
 

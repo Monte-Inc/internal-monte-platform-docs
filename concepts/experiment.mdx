@@ -6,7 +6,7 @@ An Experiment is a fixed standard for scoring a model. Two Runs under the same E
 
 An Experiment is built on a set of exam [Environments](/concepts/environments), and it fixes which exams run, each exam's sampling rules, and what counts as correct.
 
-## Why an Experiment exists
+## Why an Experiment Exists
 
 Evaluation has many variables you can set. You can give each Task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
@@ -16,7 +16,7 @@ An Experiment holds those variables constant, so within one Experiment the model
 
 When the variables go unrecorded, old results stop being usable. You cannot tell why two numbers differ, so you cannot compare the experiments that produced them.
 
-## What an Experiment fixes
+## What an Experiment Fixes
 
 An Experiment fixes three things when you create it.
 
@@ -30,7 +30,7 @@ An Experiment names no model either: each Run binds its own, so many models can 
 
 Monte checks the frozen material before every Run. If any of it changed, that is a different Experiment, and Monte refuses to score the new Run against the old ones.
 
-## Sealed and visible
+## Sealed and Visible
 
 An Experiment assigns each of its exams one of two roles at init, and that assignment is the only decision it makes. Which pile a model trains on is not part of it: the training data is stated per Run.
 
@@ -39,7 +39,7 @@ An Experiment assigns each of its exams one of two roles at init, and that assig
 
 The driving agent picks each next Move from what the visible exams show, so the loop fits itself to those tasks over time. A visible score therefore overstates the model, which is why it is not the number you report. A sealed exam stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Every exam, sealed and visible, needs that first read before training starts. Skip one and Monte refuses to train, because nothing can score the base model once a Checkpoint exists. [Improvement](/concepts/improvement) covers how those reads happen.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">

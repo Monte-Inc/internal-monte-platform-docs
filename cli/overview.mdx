@@ -16,7 +16,7 @@ The `monte` CLI is the only write path into the platform. This page states the c
 - **Refusals.** Anything the platform refuses exits 3 or higher with `CODE: cause (fix)` on stderr. The fix is part of the message.
 - **`--version`.** `monte --version` prints the installed version and exits.
 
-## Where a command runs
+## Where a Command Runs
 
 Three groups, and a command run from the wrong group is the most common source of a refusal.
 
@@ -30,7 +30,7 @@ Three groups, and a command run from the wrong group is the most common source o
 
 The first row has a precondition the others do not. `env add`, `env list --available`, and `env install` all read or write the NeMo Gym checkout, so they need a machine whose `MONTE_LOCAL` holds the stack. Installing a mock-only Environment is the exception, because it has nothing to register.
 
-## Exit codes
+## Exit Codes
 
 | Code | Name | Fires when |
 |---|---|---|

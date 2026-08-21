@@ -8,7 +8,7 @@ When you fine-tune a model on new data, or add a tool to its agent harness, you 
 
 That only holds if the two numbers you compare were produced the same way. If the tasks, the sampling rules, or the grader changed between them, the difference could have come from any of those rather than from the model, and the comparison no longer says anything about the change you made. A standardized evaluation removes that doubt, which is why every evaluation in Monte runs against a fixed [Experiment](/concepts/experiment).
 
-## Model capability or agent capability
+## Model Capability or Agent Capability
 
 A score covers the model and the agent harness together. The harness picks the tools, holds the prompt, and decides when a Task is done. Each of those moves the number.
 
@@ -21,7 +21,7 @@ An Experiment freezes the harness in each exam's fingerprint. Two Runs that scor
 
 Changing the harness changes the fingerprint, which makes a different Experiment. Monte does not score across Experiments, so it does not compare harnesses today.
 
-## What makes an evaluation good
+## What Makes an Evaluation Good
 
 **Coverage.** The tasks have to look like the work you care about. A narrow set of tasks gives a high score that says little about real use.
 
@@ -33,7 +33,7 @@ Changing the harness changes the fingerprint, which makes a different Experiment
 
 **Reproducibility.** The same Run has to be scored under the same conditions every time. The fingerprint hashes the Environment's frozen material: the tasks, the grader, and the harness configuration. Monte refuses a Run when any of it changed.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
@@ -47,7 +47,7 @@ Changing the harness changes the fingerprint, which makes a different Experiment
   </Card>
 </CardGroup>
 
-## Further reading
+## Further Reading
 
 - [Evaluation](https://docs.nvidia.com/nemo/gym/about/concepts/evaluation/) (NeMo Gym)
 - [LLM evaluation: Why testing AI models matters](https://www.ibm.com/think/insights/llm-evaluation) (IBM)

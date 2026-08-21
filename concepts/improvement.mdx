@@ -27,13 +27,13 @@ flowchart LR
     classDef score fill:#2F3675,stroke:#70A6C1,stroke-width:1.5px,color:#F0F1F2;
 ```
 
-## Moving the weights
+## Moving the Weights
 
 Training updates the model's weights using one Recipe. It is ordinary training: one of the methods described in [Training](/concepts/training), run against the Source the Run states — a curriculum, or a frozen Dataset — for a fixed number of steps. What comes out is a Checkpoint, which is the model's saved state after those steps.
 
 The Recipe does not change while this runs. Every choice about the method is settled before the first step and holds until the Checkpoint is saved. This is the part usually called the inner loop.
 
-## Moving the method
+## Moving the Method
 
 The Checkpoint is then scored on the visible exams, and the results are written to the [Ledger](/concepts/glossary). The Ledger holds the Baseline and every Run since, so it is where you find out what a given Recipe did and how that compared to what came before.
 
@@ -45,7 +45,7 @@ That is a simplification. Deciding whether a Recipe actually helped takes more t
 
 Every one of those decisions is made by reading the visible exams. That is what makes them useful, and it is also what disqualifies them as the number you report. A score you have optimized against many times stops being an independent measure of the model and starts reflecting the search that produced it. The sealed exams are held back for the final claim.
 
-## Continue, branch, or stage
+## Continue, Branch, or Stage
 
 Every Move is one of three kinds.
 
@@ -74,7 +74,7 @@ The first arrow is a fine-tuning stage, the second is the boundary where the met
 
 All three are the same operation underneath: pick a Checkpoint, pick a Source, pick a Recipe. Because a Checkpoint can have more than one child, what builds up is a tree, and one pass through the figure at the top of this page is a single path down it.
 
-## Making the claim
+## Making the Claim
 
 The search runs until the model reaches the result you were after, or until the budget you set aside runs out. Monte does not make that call. Nothing exits the search automatically, and no rule decides that you have run enough.
 
@@ -84,7 +84,7 @@ The nominated Checkpoint is then scored on each sealed exam, and the result is t
 
 If the claim shows an improvement, the Checkpoint can be promoted. Promoting exports its servable folder as a checksum-verified copy, behind a confirmation you have to type out in full. If the claim shows no improvement there is nothing worth promoting, and the Ledger keeps the record exactly as it stands, but Monte does not decide this for you: `monte promote` exports any succeeded training Run's Checkpoint that counts as evidence, so the judgement is yours. The tree still shows every method that was tried and what each one scored, so the work has an answer either way.
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={3}>
   <Card title="Training" href="/concepts/training">

@@ -6,7 +6,7 @@ Everything Monte does is recorded as a Run, and every Run is one row in its Expe
 
 The groupings you read are not stored. A Cohort and a Lineage are both derived from row fields when you ask for them, so neither can fall out of agreement with the record it came from.
 
-## The task world
+## The Task World
 
 | Term | Meaning |
 | --- | --- |
@@ -18,7 +18,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Grader** | Scores one attempt into a reward, usually between 0 and 1. It defines what "good" means for its Environment. |
 | **Split** | A frozen list of Task IDs: the one pile an Environment holds. An exam Environment holds its benchmark's tasks, and a curriculum Environment holds its training pile. The roles that used to ride on split names moved onto whole exams as **sealed** and **visible**, and `test` is not a split name anywhere. |
 
-## What gets frozen
+## What Gets Frozen
 
 | Term | Meaning |
 | --- | --- |
@@ -32,7 +32,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Vault** | The cloud bucket a freeze pushes to. It is the copy Monte treats as true for what reached it, and a data root holds a materialization of that. `monte env install` fetches an Environment back, and `monte dataset show` fetches a Dataset. What never reaches it: an Environment shipped as a package, a curriculum's rows (the Vault holds the recipe that re-derives them), and an add on a machine with no key that can write the Vault, which freezes locally and says so. See [Environments](/concepts/environments#where-a-frozen-input-lives). |
 | **Baseline** | The base model's score on one exam before any training. Every exam, sealed and visible, needs its own Baseline before the first training Run in a Cohort, because nothing can score the base model once a Checkpoint exists. A sealed exam's you take yourself, with `monte eval <experiment> --exam <name>`, and it spends the first of that exam's two touches. Every later score on that exam in the same Cohort is read against it. |
 
-## What runs
+## What Runs
 
 | Term | Meaning |
 | --- | --- |
@@ -51,7 +51,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Envelope** | The approved terms of one Improver search, fixed before it starts: the Experiment, the goal, the time window, the spend ceiling, the box, and whether the search is `closing` (it ends with the blind final claim) or `open` (it ends with a sync, and the sealed exams' final touches stay unspent). While one is active, Monte refuses every eval of an exam its Experiment seals — under any experiment name on the host — along with `monte promote`, and starts no new Run past the window. |
 | **Run plan** | The complete merged settings of one Run, resolved before launch, printed for confirmation, and stored alongside the Run. What you approve is what executes. |
 
-## What is derived
+## What Is Derived
 
 | Term | Meaning |
 | --- | --- |
@@ -67,7 +67,7 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **The claim** | The sealed exams' scores of the Checkpoint the Envelope's Nomination presents. Each sealed exam is read exactly twice per Cohort, and the first read is one you run yourself on the base model before any training. Skip it and Monte refuses to train at all, because the claim in that Cohort could never be anchored. |
 | **Promoting** | Exporting a Checkpoint's servable folder as a checksum-verified copy, with the provenance of the Run that wrote it, behind a confirmation you type out in full. Monte checks that the Run is a succeeded training Run that counts as evidence. It does not check that the Checkpoint carries a claim. |
 
-## The record
+## The Record
 
 | Term | Meaning |
 | --- | --- |
@@ -75,18 +75,18 @@ The groupings you read are not stored. A Cohort and a Lineage are both derived f
 | **Trace** | One Run's attempt at one Task: the rollout verbatim, plus the grader's own fields. |
 | **Provenance** | The hashes carried on every row, covering the code, the configuration, the exam's frozen task list, the comparability config, and the container image. |
 
-## Related pages
+## Related Pages
 
 <CardGroup cols={2}>
   <Card title="Improvement" href="/concepts/improvement">
     What the rows mean once they exist.
   </Card>
-  <Card title="CLI reference" href="/cli/overview">
+  <Card title="CLI" href="/cli/overview">
     The commands that write and read them.
   </Card>
 </CardGroup>
 
-## Further reading
+## Further Reading
 
 - [Key Terminology](https://docs.nvidia.com/nemo/gym/about/concepts/key-terminology/) (NeMo Gym)
 - [NeMo RL Documentation](https://docs.nvidia.com/nemo/rl/latest/index.html) (NVIDIA)
