@@ -1,106 +1,113 @@
 ---
-title: "The Core Loop"
+title: "Core Loop"
 ---
 
-This is the first agentic loop Monte runs, and it is deliberately the simplest one that works. One search, one box, one move at a time, in sequence. Everything harder — several lineages compared at once, more than one box, a search that spans experiments — is a later step, and the shape here is what those steps build on.
+This is the first agentic loop Monte runs, and it is deliberately the simplest one that works. One search, one box, one Move at a time, in sequence. Everything harder — several arms compared at once, more than one box, a search that spans Experiments — is a later step, and the shape here is what those steps build on.
 
-The Monte agent works this loop: it reads an experiment's Ledger, decides the next move, runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
+The other pages call the thing that works the loop a driving agent. The Improver is Monte's own: an outer-loop agent that reads an Experiment's Ledger, decides the next [Move](/concepts/improvement), runs it, and reads what came back. It runs unattended for a fixed stretch of time on its own control plane, renting the GPU boxes its Runs execute on and driving them from there. That makes the interesting question not how it decides, but what it is allowed to do while nobody is watching. The answer is the Envelope, and the platform enforces it rather than the prompt.
 
-## One Turn of the Loop
+## One turn of the loop
 
-The Monte agent works one experiment at a time, and a turn of its loop is four steps.
+The Improver works one Experiment at a time, and a turn of its loop is four steps.
 
-1. **Read the Ledger.** `monte status` prints the per-cohort deltas against the baseline, the cycles with their strike verdicts, and the checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
-2. **Decide one move**: which checkpoint to start from, which source to train on, and which recipe to run.
+1. **Read the Ledger.** `monte status` prints the per-Cohort deltas against the Baseline, the Cycles with their strike verdicts, and the Checkpoint tree. Checkpoints print as `step N` with a `written by <run>` column beside them; a reference to one is `<run>/<N>`, assembled from those two columns.
+2. **Decide one Move**: which Checkpoint to start from, which Source to train on, and which Recipe to run.
 3. **Train one chunk** with those three coordinates stated in full, since Monte infers none of them.
-4. **Score the new checkpoint on dev**, read the paired delta, and start again.
+4. **Score the new Checkpoint on the visible exams**, read the paired deltas, and start again.
 
-The move is where the search happens, and it takes four shapes. Continuing a lineage keeps the recipe and starts from that lineage's newest checkpoint. Branching keeps the recipe and starts from an earlier checkpoint, which is the move when a recipe looked healthy up to a point and then stopped. A fresh lineage starts from the base model under any recipe. A stage boundary continues a checkpoint under a different recipe, so the weights carry over while the trainer's step counter restarts. That is how a supervised stage becomes the foundation for a reinforcement learning one.
+The Move is where the search happens, and it takes four shapes. Continuing an arm keeps the Recipe and starts from that arm's newest Checkpoint. Branching keeps the Recipe and starts from an earlier Checkpoint. You do that when a Recipe looked healthy up to a point and then stopped. A fresh arm starts from the base model under any Recipe. A stage boundary continues a Checkpoint under a different Recipe, so the weights carry over while the trainer's step counter restarts. That is how a supervised stage becomes the foundation for a reinforcement learning one.
 
-Writing recipes is part of the work rather than a setup step that happens first. The Monte agent reads what the last move scored. It can respond by authoring a new recipe, not only by picking a different one off the shelf. A new recipe is a new named file rather than an edit to an existing one. A recipe is pinned by the hash of its content, so editing one in place changes its identity. The next run on that lineage then becomes a stage boundary instead of the continuation it was meant to be.
+Writing Recipes is part of the work rather than a setup step that happens first. The Improver reads what the last Move scored. It can respond by authoring a new Recipe, not only by picking a different one off the shelf. A new Recipe is a new named file rather than an edit to an existing one. A Recipe is pinned by the hash of its content, so editing one in place changes its identity. The next Run on that arm then becomes a stage boundary instead of the continuation it was meant to be.
 
-Every one of those decisions is read off dev. The Monte agent never sees a test number that its own search produced. `monte status` may show it the baseline's `test@0`, which was recorded before any training began, and it acts on none of it. The final claim on test is made after the Monte agent has stopped, by machinery it does not drive. That is what makes the claim blind.
+Every one of those decisions is read off the visible exams. The Improver sees every visible score and reasons over all of them — more visible exams is more information, and nothing merges them into one number. It never produces a sealed number: an eval of a sealed exam is refused while its Envelope is active, and the per-Cohort line in `monte status` prints a sealed exam without its score until the claim is recorded. The Run rows and `monte show` still print every recorded row's score, the sealed Baseline's included, so the mask is on the summary, not the record. What the Improver does state is a Nomination, the Checkpoint its Envelope presents. The final claim on the sealed exams is made after it has stopped, by machinery it does not drive, on that nominated Checkpoint and nothing else. That is what makes the claim blind: the Improver picks without ever running a sealed eval of its own.
 
 ## The Envelope
 
-An Envelope is the approved terms of one search, fixed before it starts and never renegotiated while it runs. It is the unit of approval and the unit of audit, so every action the Monte agent takes is judged against the Envelope it ran under.
+An Envelope is the approved terms of one search, fixed before it starts and never renegotiated while it runs. It is the unit of approval and the unit of audit, so every action the Improver takes is judged against the Envelope it ran under.
 
 | Term | What it states |
 | --- | --- |
-| **Experiment** | The experiment the search improves. Its dev split is the Monte agent's only score. |
-| **Goal** | The sentence the Monte agent optimizes for, such as beating a named baseline dev score. |
+| **Experiment** | The Experiment the search improves. Its visible exams are the Improver's only scores. |
+| **Goal** | The sentence the Improver optimizes for, such as beating a named Baseline score on a visible exam. |
 | **Window** | When the search opens and when it closes, both in UTC with an explicit offset. The close is the hard stop. |
 | **Spend ceiling** | The approved dollar figure, stated outright rather than left as an inference from the rate. |
-| **Box** | The standing GPU box the runs execute on, with its instance type and its hourly rate. |
+| **Box** | The standing GPU box the Runs execute on, with its instance type and its hourly rate. |
 | **Claim** | Whether the Envelope is **closing** or **open**. |
 
-The claim field is one bit, decided at approval. It is the difference between a search that ends in a number and one that does not. A closing Envelope ends with the blind final claim, which spends the cohort's last test read. An open Envelope ends with a sync alone, and that read stays unspent for a later Envelope to finish the work. Neither one is decided mid-flight.
+The claim field is one bit, decided at approval. It is the difference between a search that ends in a number and one that does not. A closing Envelope ends with the blind final claim, which spends each sealed exam's last touch. An open Envelope ends with a sync alone, and those touches stay unspent for a later Envelope to finish the work. Neither one is decided mid-flight.
 
 The box is not part of the Envelope's lifetime. One GPU box is acquired for the search program and held. An Envelope is an approved window of time on that box, not a box that lives and dies with the search. That separation exists because GPU capacity is genuinely scarce. Making every approval acquire its own box turns each one into a gamble, and pays the setup cost again each time.
 
-## What the Platform Refuses
+## What the platform refuses
 
 Three refusals are live for as long as an Envelope is active, and they hold regardless of which command asked or which harness ran it.
 
-- **`monte eval <experiment> --split test` is refused**, in every spelling, `--smoke` included. A smoke run skips the two-read budget on test, so it is the one spelling that would otherwise work.
+- **An eval of a sealed exam is refused**, in every spelling, `--smoke` included, and under every experiment name on the host — a fresh experiment that shows the same exam is no way around the seal. A smoke Run skips the two-touch budget, so it is the one spelling that would otherwise work.
 - **`monte promote` is refused.** Promotion is a human act on audited evidence, and it waits for the search to close.
-- **No new run starts past the window's close.** The window is the approved spend, so a run started after it is spend nobody approved.
+- **No new Run starts past the window's close.** The window is the approved spend, so a Run started after it is spend nobody approved.
 
-Each of those is keyed to one Envelope's id, and an Envelope binds only the experiment it names on the box it runs on. There is no global mode anywhere in this. A person evaluating a different experiment is never refused by it, and neither is a second search on a second box.
+Each of those is keyed to one Envelope's id. The promote and window refusals bind only the Experiment the Envelope names; the sealed refusal is deliberately wider, covering the exams that Experiment seals under any name on this host. There is still no global mode: a seal is what this search cannot see, never a claim on the exam everywhere, so the same exam may be sealed here and visible in an unrelated Experiment, and a second search on a second box is never refused by this one.
 
-Active means the record says active, and it does not mean the window is still open. An Envelope whose time has run out stays active until the finalizer marks it closed. A finalizer that never ran therefore leaves test refused rather than quietly available. Closing the record by hand is the way out of that, and it is a deliberate act with a typed confirmation.
+Active means the record says active, and it does not mean the window is still open. An Envelope whose time has run out stays active until the finalizer marks it closed. A finalizer that never ran therefore leaves the sealed exams refused rather than quietly available. Closing the record by hand is the way out of that, and it is a deliberate act with a typed confirmation.
 
-## How the Refusals Are Enforced
+## Three layers, not one
 
-The refusals have to hold against an agent nobody is watching, so three mechanisms enforce them rather than one. Each sits where a different kind of evasion would land, and only the middle one is trusted to be complete.
+The refusals above are the middle layer of three, and there are three because the outer two are known to be incomplete.
 
-**Harness Guard:** Reads each shell command before it runs and blocks the ones the search may not make, seeing through an `ssh` invocation to the command quoted inside it. Its limits are written down: a command that hides a split behind an environment variable goes past it, and so does one that writes a script and then runs it. It turns away the cheap attempts early, and nothing rests on it.
+The **harness guard** reads each shell command before it runs and blocks the ones the search may not make. It sees through an `ssh` invocation to the command quoted inside it. It is a belt, and its limits are written down. A command that hides an exam behind an environment variable goes past it. So does one that writes a script and then runs it.
 
-**Platform:** Holds the three refusals above. They fire inside Monte on the terms of the Envelope record, so what the harness guard misses is still refused at the point the command asks for it. This is the layer meant to hold on its own.
+**Monte itself** is the wall, and it is where the three refusals above live. They fire inside the platform on the terms of the Envelope record, so what the harness misses the platform still refuses.
 
-**Launcher:** Kills the Monte agent's process at the moment the window closes, and a run still in flight at that instant dies as an aborted run. Finishing the current run first would make the ceiling soft, so nothing is given that grace. The refusals stop what the search asks for; the launcher stops it asking.
+The **launcher** is the clock. It kills the Improver's process at the moment the window closes, and a Run still in flight at that instant dies as an aborted Run. Finishing the current Run first would make the ceiling soft, so nothing is given that grace.
 
-Underneath all three, the account the Monte agent runs as on the box is fenced. It has a full login shell and the whole `monte` CLI, and it has neither sudo nor any credential. That combination is deliberate: an account with sudo could read the key that spends money. It could also stop the watchdog that ends the search, or rewrite the terms of its own Envelope. This one can read its Envelope and can never write it.
+Underneath all three, the account the Improver runs as on the box is fenced. It has a full login shell and the whole `monte` CLI, and it has neither sudo nor any credential. That combination is deliberate: an account with sudo could read the key that spends money. It could also stop the watchdog that ends the search, or rewrite the terms of its own Envelope. This one can read its Envelope and can never write it.
 
-## How a Search Ends
+## How a search ends
 
 After the window closes, a finalizer runs a fixed sequence on the box.
 
-1. **Stop the Monte agent.** Nothing the search could still influence happens while a move is in flight.
-2. **Mark the Envelope closed.** This is what releases the test and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
-3. **Make the blind claim**, on closing Envelopes only, as an eval on test of the checkpoint Monte selects.
-4. **Push the claimed checkpoint's weights** to Hugging Face, where weights live.
-5. **Push the results tree** off the box, which is what makes it survive the box.
-6. **Sync the Monte agent's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
+1. **Stop the Improver.** Nothing the search could still influence happens while a Move is in flight.
+2. **Mark the Envelope closed.** This is what releases the `test` and window refusals, so the claim in the next step is not refused by its own Envelope. It is also the one step that stops the sequence if it fails, because everything after it would run into the guards it was supposed to release.
+3. **Make the blind claim**, on closing Envelopes only, as an eval of the nominated Checkpoint on each sealed exam. A search that nominated nothing presents nothing: the claim and the push are skipped, the sealed touches stay unspent, and the Envelope still ends.
+4. **Push the claimed Checkpoint's weights** to Hugging Face, where weights live.
+5. **Sync the results tree** to the durable tier, which is what survives the box.
+6. **Sync the Improver's transcript**, as its own step rather than a tail on the one above: the two trees have independent value and independent failure modes, so a results push that fails must not be the reason the reasoning is lost.
 7. **Release the box to idle**, rather than terminating it, since the box outlives the Envelope.
 
 A step that refuses or fails is recorded and the sequence continues past it. A failed claim should not also cost the search its sync, and an unreleased box would stay out of normal idle reaping.
 
-The transcript is synced because it and the Ledger answer different questions. The Ledger records what was tried and what each attempt scored. The transcript records why the Monte agent moved as it did, which is what a later search reads before deciding where to pick up.
+The transcript is synced because it and the Ledger answer different questions. The Ledger records what was tried and what each attempt scored. The transcript records why the Improver moved as it did, which is what a later search reads before deciding where to pick up.
 
-## Reading and Ending an Envelope
+## Reading and ending an Envelope
 
 ```bash
 monte envelope list [--json]
 monte envelope show <envelope-id> [--json]
+monte envelope nominate <envelope-id> <run>/<step>
 monte envelope finalize <envelope-id> [--json]
 monte envelope close <envelope-id> --confirm <envelope-id> [--reason R]
 ```
 
-`list` prints every Envelope record this host can see, each with its state, its claim bit, its experiment, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
+`list` prints every Envelope record this host can see, each with its state, its claim bit, its Experiment, and its window. `show` prints one in full: the approved terms exactly as they were approved, plus the state Monte keeps alongside them.
 
-`finalize` runs the sequence above. It belongs to the box watchdog rather than to a person, and it is idempotent, because that watchdog will call it more than once. An already-closed Envelope is reported and not re-finalized, so the last test read cannot be spent twice.
+`nominate` records which Checkpoint this Envelope presents. It is the Improver's verb: the last Nomination stands, re-nominating replaces it, and the nominee needs an admissible eval, because a presented model is measured, never merely liked. The finalizer claims and pushes that Checkpoint after the search stops.
 
-`close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer ran on another host, or never ran at all, and an Envelope is holding a test split hostage.
+`finalize` runs the sequence above. It belongs to the box watchdog rather than to a person, and it is idempotent, because that watchdog will call it more than once. An already-closed Envelope is reported and not re-finalized, so a sealed exam's last touch cannot be spent twice.
 
-## Related Pages
+`close` is the escape hatch, and it takes `--confirm <envelope-id>` typed out. It marks an Envelope consumed without finalizing it, which releases the refusals and skips the blind claim entirely. Reach for it when a finalizer ran on another host, or never ran at all, and an Envelope is holding the sealed exams hostage.
+
+## What is not here yet
+
+One Envelope runs at a time, on one box, and its search is serial: one Run, then the next. Several boxes comparing Recipes concurrently under a single Envelope is a planned expansion rather than something you can ask for today. The design leaves room for it, but the platform has not shipped it.
+
+## Related pages
 
 <CardGroup cols={3}>
   <Card title="Improvement" href="/concepts/improvement">
-    The loop the Monte agent drives.
+    The loop the Improver drives.
   </Card>
   <Card title="Experiment" href="/concepts/experiment">
-    What dev and test are for.
+    What sealed and visible exams are for.
   </Card>
   <Card title="Glossary" href="/concepts/glossary">
     The vocabulary this page uses.

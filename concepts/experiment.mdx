@@ -2,52 +2,53 @@
 title: "Experiments"
 ---
 
-An experiment is a fixed standard for scoring a model. Two runs under the same experiment answered the same tasks under the same rules, so they can be compared directly.
+An Experiment is a fixed standard for scoring a model. Two Runs under the same Experiment answered the same tasks under the same rules, so you can compare them directly.
 
-An experiment is built on one [Environment](/concepts/environments), and it fixes which of that environment's tasks run, the sampling rules, and what constitutes correctness.
+An Experiment is built on a set of exam [Environments](/concepts/environments), and it fixes which exams run, each exam's sampling rules, and what counts as correct.
 
-## Why an Experiment Exists
+## Why an Experiment exists
 
-Evaluation has many variables to set. You can give each task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly. Each choice returns a different number for the same model, and none is wrong. They answer different questions about how well the model completes the task.
+Evaluation has many variables you can set. You can give each Task one attempt or several, change the decoding temperature, run a different subset of the tasks, or mark answers more or less strictly.
 
-An experiment holds those variables constant, so within one experiment the model is the only variable that changed between two runs. Any number of experiments can be defined.
+Each of those returns a different number for the same model, and none of them is wrong. They answer different questions about how well the model does the task.
 
-When the variables go unrecorded, old results become unreliable. Without knowing the configuration of a result, nothing explains why two numbers differ, so the experiments that produced them cannot be compared.
+An Experiment holds those variables constant, so within one Experiment the model is the only thing that changed between two Runs. You can define as many Experiments as you want.
 
-## What an Experiment Fixes
+When the variables go unrecorded, old results stop being usable. You cannot tell why two numbers differ, so you cannot compare the experiments that produced them.
 
-An experiment fixes three things at creation.
+## What an Experiment fixes
 
-1. **Tasks:** Which tasks run, as an exact list. Not a count and not a name, but those specific tasks.
-2. **Evaluation Settings:** How the model is sampled: the decoding, the temperature, and how many attempts each task gets.
-3. **Grader:** Which grader scores the answers, and the prompt the model saw.
+An Experiment fixes three things when you create it.
 
-An experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the source, what a run trains on, because those are what agents change between runs.
+1. **The exams.** Which exam Environments run, each pinned by its fingerprint: an exact task list, not a count and not a name.
+2. **The eval settings.** How the model is sampled: the decoding, the temperature, and how many attempts each Task gets. The settings belong to each exam, so two exams in one Experiment can differ.
+3. **The grading.** Which grader scores the answers, and the prompt the model saw.
 
-An Experiment names no model either: each Run binds its own, so many models can be compared under one Experiment.
+An Experiment fixes the evaluation only, not the training. The [Recipe](/concepts/training#recipes) stays free, and so does the Source, what a Run trains on, because those are what the driving agent changes between Runs.
 
-Monte checks the frozen material before every run. If any of it changed, that is a different experiment, and Monte refuses to score the new run against the old ones.
+An Experiment names no model either: each Run binds its own, so many models can compete under one Experiment.
 
-## The Splits
+Monte checks the frozen material before every Run. If any of it changed, that is a different Experiment, and Monte refuses to score the new Run against the old ones.
 
-An experiment owns its splits, and the trainer and the evaluator both read the same lists, which is what holds the roles below in place. An experiment over a trainable environment carries all three. One over an eval-only environment carries dev alone when that environment was frozen from a single benchmark, and dev and test when it was frozen from two, which is the form that can carry a final claim.
+## Sealed and visible
 
-- **Train:** What the model learns on.
-- **Dev:** What agents read to choose the next move.
-- **Test:** Held back for the baseline and the final claim.
+An Experiment assigns each of its exams one of two roles at init, and that assignment is the only decision it makes. Which pile a model trains on is not part of it: the training data is stated per Run.
 
-Agents pick each next move from what dev shows, so the loop fits itself to those tasks over time. A dev score therefore overstates the model, which is why dev is not the number to report. test stays out of the loop entirely, and it gets two reads: the first is taken deliberately, as an eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Skip that first read and Monte refuses the claim as well, because there would be nothing to compare it against. [Improvement](/concepts/improvement) covers how those reads happen.
+- **Visible.** The driving agent evaluates these freely, every cycle, and reasons over all of them. More visible exams is more information: nothing ranks them, and nothing merges their scores into one number.
+- **Sealed.** The driving agent can never evaluate these. Each sealed exam is touched twice per Cohort: the Baseline, and the final claim.
 
-## Related Pages
+The driving agent picks each next Move from what the visible exams show, so the loop fits itself to those tasks over time. A visible score therefore overstates the model, which is why it is not the number you report. A sealed exam stays out of the loop entirely, and it gets two reads: you take the first one yourself, as a deliberate eval of the base model before any training begins, and the second is the final claim, after which Monte refuses a third. Every exam, sealed and visible, needs that first read before training starts. Skip one and Monte refuses to train, because nothing can score the base model once a Checkpoint exists. [Improvement](/concepts/improvement) covers how those reads happen.
+
+## Related pages
 
 <CardGroup cols={3}>
   <Card title="Environments" href="/concepts/environments">
-    The graded world an experiment freezes.
+    The graded world an Experiment freezes.
   </Card>
   <Card title="Improvement" href="/concepts/improvement">
-    How splits, baselines, and deltas judge improvement.
+    How Baselines and deltas judge improvement.
   </Card>
   <Card title="Glossary" href="/concepts/glossary">
-    The record every run writes to.
+    The record every Run writes to.
   </Card>
 </CardGroup>
